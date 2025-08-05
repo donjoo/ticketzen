@@ -6,7 +6,7 @@ from rest_framework.serializers import ModelSerializer
 
 # Djangos built user authentication for DRF + react project
 
-def UserSerilialiser(ModelSerializer):
+class UserSerilializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email']
@@ -34,7 +34,7 @@ class RegisterUserView(generics.CreateAPIView):
 
 class UserProfileView(generics.RetrieveAPIView):
     queryset = User.objects.all()
-    serializer_class = UserSerilialiser
+    serializer_class = UserSerilializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
