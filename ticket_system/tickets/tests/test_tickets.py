@@ -46,6 +46,8 @@ class TicketTestCase(APITestCase):
         url = reverse('ticket-detail', args=[ticket.id])
         resp = self.client.put(url, {'title': 'Updated', 'description':'new updation', 'priority':'low','status':'open'}, **header)
         # Check if the response status code is 403 Forbidden -->used 404 since django returns 404
+        # DRF intentionally returns 404 instead of 403 to avoid leaking the existence of an object
+        #  to unauthorized users.
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
 
