@@ -10,4 +10,25 @@ class TicketSerializer(serializers.ModelSerializer):
         source='assigned_to',
         queryset=User.objects.all(),
         write_only=True,
-        
+        requoired=False
+
+    )
+    class Mets:
+        model = Ticket
+        fields = [
+            'id',
+            'title',
+            'description',
+            'priority',
+            'status',
+            'user',
+            'assigned_to',
+            'assigned_to_id',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['user', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'priority': {'required': True},
+            'status': {'required': True}
+        }
