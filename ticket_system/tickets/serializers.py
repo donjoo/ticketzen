@@ -10,10 +10,10 @@ class TicketSerializer(serializers.ModelSerializer):
         source='assigned_to',
         queryset=User.objects.all(),
         write_only=True,
-        requoired=False
+        required=False
 
     )
-    class Mets:
+    class Meta:
         model = Ticket
         fields = [
             'id',

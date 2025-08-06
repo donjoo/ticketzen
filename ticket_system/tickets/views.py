@@ -2,7 +2,7 @@ from rest_framework import generics, permissions , viewsets , filters , status
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from rest_framework.serializers import ModelSerializer
-from django_filter.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Ticket
 from .serializers import TicketSerializer
 from .permissions import IsOwnerOrAdmin
@@ -88,7 +88,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         if serialized:
             payload = ticket
         else:
-            password = TicketSerializer(ticket_obj).data
+            payload = TicketSerializer(ticket_obj).data
         message = {
             'action': action,
             'ticket': payload
@@ -100,4 +100,3 @@ class TicketViewSet(viewsets.ModelViewSet):
                 'message': message
             }  
         )
-        
