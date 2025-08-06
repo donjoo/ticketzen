@@ -5,6 +5,8 @@ import Signup from "./pages/auth/Signup";
 // import Dashboard from "./pages/Dashboard"; // optional for now
 import { useAuth } from "./context/useAuth";
 import Dashboard from "./pages/dashboard";
+import './App.css'
+
 
 const App = () => {
   const { user } = useAuth();
