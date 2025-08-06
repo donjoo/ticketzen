@@ -18,12 +18,12 @@ export const AuthProvider = ({ children }) => {
       : null
   );
 
-  const loginUser = async (email, password) => {
+  const loginUser = async (username, password) => {
     try {
       const response = await fetch("http://localhost:8000/api/token/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();

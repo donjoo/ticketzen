@@ -10,7 +10,8 @@ from .permissions import IsOwnerOrAdmin
 from asgiref.sync import async_to_sync
 from  channels.layers import get_channel_layer
 
-
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 # Djangos built user authentication for DRF + react project
 
@@ -49,6 +50,21 @@ class UserProfileView(generics.RetrieveAPIView):
         return self.request.user
 
 
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        # Add user info to the response
+        data['user'] = {
+            'id': self.user.id,
+            'username': self.user.username,
+            'email': self.user.email,
+        }
+
+        return data
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 # Ticket Views
 
