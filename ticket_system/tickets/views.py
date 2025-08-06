@@ -83,6 +83,9 @@ class TicketViewSet(viewsets.ModelViewSet):
         instance.delete()   
         self._broadcast('deleted', ticket_data,serialized=True)
 
+
+    
+
     def _broadcast(self, action , ticket_obj,serialized=False):
         layer = get_channel_layer()
         if serialized:

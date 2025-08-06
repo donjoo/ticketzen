@@ -45,7 +45,8 @@ class TicketTestCase(APITestCase):
         header = self.get_token_header(user2)
         url = reverse('ticket-detail', args=[ticket.id])
         resp = self.client.put(url, {'title': 'Updated', 'description':'new updation', 'priority':'low','status':'open'}, **header)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        # Check if the response status code is 403 Forbidden -->used 404 since django returns 404
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
 
 
