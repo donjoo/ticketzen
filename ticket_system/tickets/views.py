@@ -105,7 +105,7 @@ class TicketViewSet(viewsets.ModelViewSet):
     def _broadcast(self, action , ticket_obj,serialized=False):
         layer = get_channel_layer()
         if serialized:
-            payload = ticket
+            payload = ticket_obj
         else:
             payload = TicketSerializer(ticket_obj).data
         message = {

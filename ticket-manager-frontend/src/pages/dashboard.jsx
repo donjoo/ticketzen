@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/serivces/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const WEBSOCKET_URL = "ws://localhost:8000/ws/tickets/";
 
@@ -147,7 +148,7 @@ const Dashboard = () => {
       await api.delete(`tickets/${ticketId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+        toast.success("Ticket deleted successfully");
       setTickets(prev => prev.filter(t => t.id !== ticketId));
       setFilteredTickets(prev => prev.filter(t => t.id !== ticketId));
     } catch (error) {
