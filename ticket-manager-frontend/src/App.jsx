@@ -6,6 +6,7 @@ import Signup from "./pages/auth/Signup";
 import { useAuth } from "./context/useAuth";
 import Dashboard from "./pages/dashboard";
 import './App.css'
+import TicketDetail from "./pages/TicketDetail";
 
 
 const App = () => {
@@ -20,6 +21,7 @@ const App = () => {
         element={user ? <Dashboard /> : <Navigate to="/login" />}
       />
       <Route path="*" element={<Navigate to="/login" />} />
+      <Route path="/tickets/:ticketId" element={<TicketDetail />} />
     </Routes>
   );
 };

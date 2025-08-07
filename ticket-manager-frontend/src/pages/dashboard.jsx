@@ -18,6 +18,8 @@ import api from "@/serivces/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import TicketDetail from "./TicketDetail";
+import { useNavigate } from "react-router-dom";
 
 const WEBSOCKET_URL = "ws://localhost:8000/ws/tickets/";
 
@@ -121,6 +123,8 @@ const Dashboard = () => {
   const [deletingTicket, setDeletingTicket] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+//   const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("authTokens");
@@ -342,6 +346,11 @@ const Dashboard = () => {
     }
   };
 
+  // If a ticket is selected, show the detail page
+  const handleTicketClick = (ticketId) => {
+    navigate(`/tickets/${ticketId}`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-zinc-100">
       
@@ -500,10 +509,14 @@ const Dashboard = () => {
                             {getStatusIcon(ticket.status)}
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">
-                          <div className="max-w-[200px] truncate" title={ticket.title}>
+                          <TableCell className="font-medium">
+                          <button
+                            onClick={() => handleTicketClick(ticket.id)}
+                            className="max-w-[200px] truncate text-left hover:text-blue-600 hover:underline"
+                            title={ticket.title}
+                          >
                             {ticket.title}
-                          </div>
+                          </button>
                         </TableCell>
                         <TableCell>
                           <div className="max-w-[300px] truncate text-gray-600" title={ticket.description}>

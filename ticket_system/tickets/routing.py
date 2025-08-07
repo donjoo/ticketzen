@@ -3,4 +3,5 @@ from . import consumers
 
 websocket_urlpatterns = [
     re_path(r'ws/tickets/updated/?$', consumers.TicketConsumer.as_asgi()),
+    re_path(r'ws/tickets/?$', consumers.TicketConsumer.as_asgi()),
 ]
