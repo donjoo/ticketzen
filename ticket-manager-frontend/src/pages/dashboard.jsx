@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Filter, Search, AlertCircle, CheckCircle, Clock, User, X, Ticket, RefreshCw, FileX, Loader2 } from 'lucide-react';
+import { Plus, Filter, Search, AlertCircle, CheckCircle, Clock, User, X, Ticket, RefreshCw, FileX, Loader2, LogOut, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -10,11 +10,13 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";  
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/serivces/api";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const WEBSOCKET_URL = "ws://localhost:8000/ws/tickets/";
 
@@ -114,6 +116,44 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingTicket, setEditingTicket] = useState(null);
+  const [deletingTicket, setDeletingTicket] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleLogout = () => {
+    localStorage.removeItem("authTokens");
+    // Redirect to login page or handle logout logic
+    window.location.href = "/login";
+  };
+
+  const handleEditTicket = (ticket) => {
+    setEditingTicket(ticket);
+    setNewTitle(ticket.title);
+    setNewDescription(ticket.description);
+    setNewPriority(ticket.priority);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteTicket = async (ticketId) => {
+    try {
+      const tokens = JSON.parse(localStorage.getItem("authTokens"));
+      let token = null;
+      
+      if (tokens && tokens.access) {
+        token = tokens.access;
+      }
+
+      await api.delete(`tickets/${ticketId}/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setTickets(prev => prev.filter(t => t.id !== ticketId));
+      setFilteredTickets(prev => prev.filter(t => t.id !== ticketId));
+    } catch (error) {
+      console.error("Error deleting ticket:", error);
+    }
+  };
 
   useEffect(() => {
     fetchTickets();
@@ -184,6 +224,17 @@ const Dashboard = () => {
     setFilteredTickets(filtered);
   };
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, priorityFilter, search]);
+
   useEffect(() => {
     handleFilter();
     // eslint-disable-next-line
@@ -253,25 +304,38 @@ const Dashboard = () => {
         return;
       }
 
-      const response = await api.post(
-        "tickets/",
-        {
-          title: newTitle,
-          description: newDescription,
-          priority: newPriority,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const ticketData = {
+        title: newTitle,
+        description: newDescription,
+        priority: newPriority,
+      };
 
-      handleTicketCreated(response.data);
+      let response;
+      if (editingTicket) {
+        // Update existing ticket
+        response = await api.put(`tickets/${editingTicket.id}/`, ticketData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        // Update tickets in state
+        setTickets(prev => prev.map(t => t.id === editingTicket.id ? response.data : t));
+        setFilteredTickets(prev => prev.map(t => t.id === editingTicket.id ? response.data : t));
+      } else {
+        // Create new ticket
+        response = await api.post("tickets/", ticketData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        handleTicketCreated(response.data);
+      }
+
       setIsModalOpen(false);
+      setEditingTicket(null);
       setNewTitle("");
       setNewDescription("");
       setNewPriority("medium");
     } catch (error) {
-      console.error("Error creating ticket:", error);
+      console.error("Error saving ticket:", error);
     } finally {
       setIsCreating(false);
     }
@@ -279,26 +343,56 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-zinc-100">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-2">
-              🎫 Tickets Dashboard
-            </h1>
-            <p className="text-gray-600">
-              Manage and track your support tickets
-            </p>
+      
+      {/* Enhanced Header */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-40 backdrop-blur-sm bg-white/95">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Ticket className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Tickets Dashboard
+                  </h1>
+                  <p className="text-sm text-gray-500">
+                    Manage and track support tickets
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={() => {
+                  setEditingTicket(null);
+                  setNewTitle("");
+                  setNewDescription("");
+                  setNewPriority("medium");
+                  setIsModalOpen(true);
+                }} 
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4" />
+                Create Ticket
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
           </div>
-          <Button 
-            onClick={() => setIsModalOpen(true)} 
-            className="flex items-center gap-2 px-6 py-3 font-medium shadow-lg"
-            size="lg"
-          >
-            <Plus className="w-4 h-4" />
-            Create Ticket
-          </Button>
         </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
 
         {/* Filters */}
         <Card className="mb-8">
@@ -374,100 +468,200 @@ const Dashboard = () => {
         {/* Content */}
         {!isLoading && !error && (
           <>
-            {/* Stats */}
-            {tickets.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-900">{tickets.length}</div>
-                    <div className="text-sm text-gray-500">Total Tickets</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {tickets.filter(t => t.status === 'open').length}
-                    </div>
-                    <div className="text-sm text-gray-500">Open</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {tickets.filter(t => t.status === 'in progress').length}
-                    </div>
-                    <div className="text-sm text-gray-500">In Progress</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {tickets.filter(t => t.status === 'resolved').length}
-                    </div>
-                    <div className="text-sm text-gray-500">Resolved</div>
-                  </CardContent>
-                </Card>
+            
+            {/* Tickets Table */}
+            <div className="bg-white rounded-lg border shadow-sm">
+              <div className="p-6 border-b">
+                <h2 className="text-lg font-semibold text-gray-900">All Tickets</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {filteredTickets.length} of {tickets.length} tickets
+                </p>
               </div>
-            )}
-
-            {/* Tickets Grid */}
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredTickets.map((ticket) => (
-                <Card
-                  key={ticket.id}
-                  className={`
-                    transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-[1.02]
-                    border-l-4 ${getCardBorderColor(ticket.priority)}
-                  `}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        {getStatusIcon(ticket.status)}
-                        <h3 className="font-semibold text-gray-900 truncate">
-                          {ticket.title}
-                        </h3>
+              
+              <div className="overflow-auto max-h-[600px]">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-gray-50">
+                    <TableRow>
+                      <TableHead className="w-12">Status</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="w-24">Priority</TableHead>
+                      <TableHead className="w-32">Assigned To</TableHead>
+                      <TableHead className="w-32">Created</TableHead>
+                      <TableHead className="w-20">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedTickets.map((ticket) => (
+                      <TableRow key={ticket.id} className="hover:bg-gray-50">
+                        <TableCell>
+                          <div className="flex items-center justify-center">
+                            {getStatusIcon(ticket.status)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="max-w-[200px] truncate" title={ticket.title}>
+                            {ticket.title}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-[300px] truncate text-gray-600" title={ticket.description}>
+                            {ticket.description}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getPriorityVariant(ticket.priority)}>
+                            {ticket.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm">
+                            <User className="w-3 h-3 text-gray-400" />
+                            <span className="truncate max-w-[100px]">
+                              {ticket.assigned_to_name || (
+                                <span className="text-orange-500">Unassigned</span>
+                              )}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-500">
+                          <div>
+                            {new Date(ticket.created_at).toLocaleDateString()}
+                          </div>
+                          <div className="text-xs">
+                            {new Date(ticket.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditTicket(ticket)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteTicket(ticket.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                
+                {/* Pagination Controls */}
+                {filteredTickets.length > 0 && (
+                  <div className="flex items-center justify-between px-6 py-4 border-t">
+                    <div className="flex items-center gap-4">
+                      <div className="text-sm text-gray-500">
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredTickets.length)} of {filteredTickets.length} results
                       </div>
-                      <Badge variant={getPriorityVariant(ticket.priority)} className="ml-2">
-                        {ticket.priority}
-                      </Badge>
+                      <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+                        setItemsPerPage(parseInt(value));
+                        setCurrentPage(1);
+                      }}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-sm text-gray-500">per page</span>
                     </div>
-
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                      {ticket.description}
-                    </p>
-
-                    <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-gray-500 pt-3 border-t">
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                      >
+                        First
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      
                       <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>
-                          {new Date(ticket.created_at).toLocaleDateString()}
-                        </span>
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              className="w-8 h-8 p-0"
+                              onClick={() => setCurrentPage(pageNum)}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        <span>
-                          {ticket.assigned_to_name || (
-                            <span className="text-orange-500 font-medium">Unassigned</span>
-                          )}
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {ticket.status}
-                      </Badge>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                      >
+                        Last
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              {/* Empty States */}
-              {tickets.length === 0 && (
-                <EmptyState type="no-tickets" onCreateTicket={() => setIsModalOpen(true)} />
-              )}
-
-              {tickets.length > 0 && filteredTickets.length === 0 && (
-                <EmptyState type="no-results" onClearFilters={clearFilters} />
-              )}
+                  </div>
+                )}
+                
+                {/* Empty state for table */}
+                {paginatedTickets.length === 0 && !isLoading && (
+                  <div className="p-12 text-center">
+                    {tickets.length === 0 ? (
+                      <EmptyState type="no-tickets" onCreateTicket={() => setIsModalOpen(true)} />
+                    ) : (
+                      <EmptyState type="no-results" onClearFilters={clearFilters} />
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -478,11 +672,16 @@ const Dashboard = () => {
             <Card className="w-full max-w-md">
               <CardContent className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Create New Ticket</h2>
+                  <h2 className="text-xl font-semibold">
+                    {editingTicket ? 'Edit Ticket' : 'Create New Ticket'}
+                  </h2>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setEditingTicket(null);
+                    }}
                     disabled={isCreating}
                   >
                     <X className="w-4 h-4" />
@@ -550,7 +749,7 @@ const Dashboard = () => {
                       ) : (
                         <>
                           <Plus className="w-4 h-4 mr-2" />
-                          Create Ticket
+                          {editingTicket ? 'Update Ticket' : 'Create Ticket'}
                         </>
                       )}
                     </Button>
