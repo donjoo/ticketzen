@@ -30,5 +30,5 @@ class TicketSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'created_at', 'updated_at']
         extra_kwargs = {
             'priority': {'required': True},
-            'status': {'required': True}
+            # 'status': {'required': True}
         }

@@ -7,8 +7,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
 from jwt import decode as jwt_decode
 from django.conf import settings
-from rest_framework_simplejwt.exceptions import TokenError, invalidToken
-from djang.contrib.auth.models import User
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from django.contrib.auth.models import User
 
 
 
