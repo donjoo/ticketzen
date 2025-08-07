@@ -43,7 +43,7 @@ class TicketConsumer(AsyncWebsocketConsumer):
             token = token_list[0]
             try:
                 validated_token = UntypedToken(token)
-            except (invalidToken, TokenError):
+            except (InvalidToken, TokenError):
                 return AnonymousUser()
 
             from rest_framework_simplejwt.authentication import JWTAuthentication

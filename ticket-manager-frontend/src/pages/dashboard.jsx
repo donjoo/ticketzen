@@ -21,7 +21,19 @@ import { toast } from "sonner";
 import TicketDetail from "./TicketDetail";
 import { useNavigate } from "react-router-dom";
 
-const WEBSOCKET_URL = "ws://localhost:8000/ws/tickets/";
+
+const tokens = JSON.parse(localStorage.getItem("authTokens"));
+let token = null;
+      
+if (tokens && tokens.access) {
+token = tokens.access;
+} else {
+console.log("No access token found");
+}
+
+const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+
+// const WEBSOCKET_URL = "ws://localhost:8000/ws/tickets/";
 
 // Skeleton component for loading state
 const TicketSkeleton = () => (
