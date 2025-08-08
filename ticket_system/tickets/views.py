@@ -13,12 +13,18 @@ from  channels.layers import get_channel_layer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+
+from rest_framework.decorators import action
+from django.contrib.auth import get_user_model
+from .serializers import  BulkUserUpdateSerializer
+
+
 # Djangos built user authentication for DRF + react project
 
 class UserSerilializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'username', 'email','is_staff', 'is_superuser', 'date_joined']
 
 class RegisterUserSerializer(ModelSerializer):
     class Meta:
@@ -65,6 +71,54 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    # queryset = User.objects.all().order_by('-date_joined')
+    serializer_class = UserSerilializer
+
+    def get_queryset(self):
+        # Add filter support if needed in query params
+        return User.objects.all().order_by('-date_joined')
+
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+@action(detail=False, methods=['patch'], url_path='bulk-update')
+def bulk_update(self, request):
+    if not request.user.is_superuser:
+        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = BulkUserUpdateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    user_ids = serializer.validated_data['user_ids']
+    update_data = serializer.validated_data['update_data']
+
+    updated_count = User.objects.filter(id__in=user_ids).update(**update_data)
+    return Response({'updated': updated_count}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='bulk-delete')
+    def bulk_delete(self, request):
+        """
+        Handle bulk delete of users.
+        """
+        if not request.user.is_superuser:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        user_ids = request.data.get('user_ids', [])
+        if not isinstance(user_ids, list) or not user_ids:
+            return Response({'error': 'user_ids must be a non-empty list'}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count, _ = User.objects.filter(id__in=user_ids).delete()
+        return Response({'deleted': deleted_count}, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
 
 # Ticket Views
 

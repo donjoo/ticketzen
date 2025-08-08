@@ -32,3 +32,13 @@ class TicketSerializer(serializers.ModelSerializer):
             'priority': {'required': True},
             # 'status': {'required': True}
         }
+
+
+
+
+class BulkUserUpdateSerializer(serializers.Serializer):
+    user_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False
+    )
+    update_data = serializers.DictField()

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2, Save, X, Calendar, User, Clock, AlertCircle, CheckCircle, MessageSquare, Send, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/serivces/api";
-// import api from "../services/api";
+// import api from "../services/api";import { useRef } from "react";
 
 const TicketDetail = () => {
   const {  ticketId } = useParams();
@@ -27,7 +27,10 @@ const TicketDetail = () => {
   const [newComment, setNewComment] = useState("");
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  
+  const tokens = JSON.parse(localStorage.getItem("authTokens"));
+  const token = tokens?.access;
+  const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+
   // Edit form state
   const [editForm, setEditForm] = useState({
     title: "",
@@ -102,6 +105,77 @@ const TicketDetail = () => {
       setIsLoading(false);
     }
   };
+
+
+
+
+
+
+
+
+const socketRef = useRef(null);
+
+useEffect(() => {
+  // Only create socket if token and ticketId are present
+  if (!token || !ticketId) return;
+
+  socketRef.current = new WebSocket(WEBSOCKET_URL);
+
+  socketRef.current.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      // Only update state if this message concerns this ticket
+      if (data?.action && data?.ticket) {
+        if (data.ticket.id === Number(ticketId)) {
+          if (data.action === "deleted") {
+            // Show confirmation & navigate away if this ticket is deleted
+            setError("This ticket was deleted.");
+            setTimeout(() => {
+              navigate('/dashboard');
+            }, 2000);
+          } else {
+            // For update/created, update local ticket state
+            setTicket(data.ticket);
+            // Optionally update the edit form so it's always in sync:
+            setEditForm({
+              title: data.ticket.title || "",
+              description: data.ticket.description || "",
+              status: data.ticket.status || "open",
+              priority: data.ticket.priority || "medium",
+              assigned_to: data.ticket.assigned_to || ""
+            });
+          }
+        }
+      }
+    } catch(e) {
+      console.error("WebSocket message error:", e);
+    }
+  };
+
+  socketRef.current.onopen = () => {
+    // You can log connection open if you like
+    // console.log("WebSocket connected in TicketDetail");
+  };
+
+  socketRef.current.onclose = () => {
+    // Connection closed
+    // console.log("WebSocket closed in TicketDetail");
+  };
+
+  // Clean up on unmount
+  return () => {
+    if (socketRef.current) {
+      socketRef.current.close();
+    }
+  };
+}, [ticketId, token, navigate]);
+
+
+
+
+
+
+
 
   const fetchComments = async () => {
     try {

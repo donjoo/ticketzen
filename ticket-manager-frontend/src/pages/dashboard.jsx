@@ -135,6 +135,7 @@ const Dashboard = () => {
   const [deletingTicket, setDeletingTicket] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  
 //   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const navigate = useNavigate();
 
@@ -400,6 +401,18 @@ const Dashboard = () => {
                 <Plus className="w-4 h-4" />
                 Create Ticket
               </Button>
+
+
+
+ <Button
+    variant="outline"
+    onClick={() => navigate("/admindashboard")}
+    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
+  >
+    {/* <Shield className="w-4 h-4" /> */}
+    Admin Dashboard
+  </Button>
+
               
               <Button 
                 variant="outline" 

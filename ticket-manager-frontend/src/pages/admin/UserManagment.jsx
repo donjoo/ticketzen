@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import { Plus, Filter, Search, AlertCircle, CheckCircle, Clock, User, X, Ticket, RefreshCw, FileX, Loader2, LogOut, Edit, Trash2, MoreHorizontal, Eye, Settings, Shield, Users, BarChart3, Download, UserPlus, Calendar, TrendingUp, Activity, Archive } from 'lucide-react';
+import { Plus, Filter, Search, AlertCircle, CheckCircle, Clock, User, X, Ticket, RefreshCw, FileX, Loader2, LogOut, Edit, Trash2, MoreHorizontal, Eye, Settings, Shield, Users, BarChart3, Download, UserPlus, Calendar, TrendingUp, Activity, Archive, Crown, UserCheck, Mail, Phone } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -15,22 +15,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-// import api from "../services/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import api from "@/serivces/api";
 
-
 const tokens = JSON.parse(localStorage.getItem("authTokens"));
 let token = null;
-      
 if (tokens && tokens.access) {
-token = tokens.access;
+  token = tokens.access;
 } else {
-console.log("No access token found");
+  console.log("No access token found");
 }
-
-const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
 
 // Stats Card Component
 const StatsCard = ({ title, value, change, icon: Icon, trend = "up" }) => (
@@ -58,23 +53,23 @@ const StatsCard = ({ title, value, change, icon: Icon, trend = "up" }) => (
 );
 
 // Bulk Actions Component
-const BulkActionsBar = ({ selectedTickets, onBulkAction, onClearSelection }) => {
+const BulkActionsBar = ({ selectedUsers, onBulkAction, onClearSelection }) => {
+  const [bulkRole, setBulkRole] = useState("");
   const [bulkStatus, setBulkStatus] = useState("");
-  const [bulkAssignee, setBulkAssignee] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleBulkAction = async (action) => {
     setIsProcessing(true);
     try {
-      await onBulkAction(action, { status: bulkStatus, assignee: bulkAssignee });
+      await onBulkAction(action, { role: bulkRole, status: bulkStatus });
+      setBulkRole("");
       setBulkStatus("");
-      setBulkAssignee("");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  if (selectedTickets.length === 0) return null;
+  if (selectedUsers.length === 0) return null;
 
   return (
     <Card className="mb-6 border-blue-200 bg-blue-50">
@@ -82,37 +77,36 @@ const BulkActionsBar = ({ selectedTickets, onBulkAction, onClearSelection }) => 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-blue-900">
-              {selectedTickets.length} ticket{selectedTickets.length > 1 ? 's' : ''} selected
+              {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''} selected
             </span>
-            
             <div className="flex items-center gap-2">
+              <Select value={bulkRole} onValueChange={setBulkRole}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={bulkStatus} onValueChange={setBulkStatus}>
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
-
-              <Input
-                placeholder="Assign to..."
-                value={bulkAssignee}
-                onChange={(e) => setBulkAssignee(e.target.value)}
-                className="w-32"
-              />
-
               <Button
                 size="sm"
                 onClick={() => handleBulkAction('update')}
-                disabled={isProcessing || (!bulkStatus && !bulkAssignee)}
+                disabled={isProcessing || (!bulkRole && !bulkStatus)}
               >
                 {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update"}
               </Button>
-
               <Button
                 size="sm"
                 variant="destructive"
@@ -123,7 +117,6 @@ const BulkActionsBar = ({ selectedTickets, onBulkAction, onClearSelection }) => 
               </Button>
             </div>
           </div>
-
           <Button
             size="sm"
             variant="outline"
@@ -138,56 +131,76 @@ const BulkActionsBar = ({ selectedTickets, onBulkAction, onClearSelection }) => 
 };
 
 // Quick Actions Modal
-const QuickActionsModal = ({ ticket, isOpen, onClose, onUpdate }) => {
+const QuickActionsModal = ({ user, isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
-    status: ticket?.status || "",
-    priority: ticket?.priority || "",
-    assigned_to: ticket?.assigned_to || "",
+    role: user?.role || "",
+    status: user?.status || "",
+    is_staff: user?.is_staff || false,
+    is_superuser: user?.is_superuser || false,
     notes: ""
   });
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    if (ticket) {
+    if (user) {
       setFormData({
-        status: ticket.status || "",
-        priority: ticket.priority || "",
-        assigned_to: ticket.assigned_to || "",
+        role: user.role || "",
+        status: user.status || "active",
+        is_staff: user.is_staff || false,
+        is_superuser: user.is_superuser || false,
         notes: ""
       });
     }
-  }, [ticket]);
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsUpdating(true);
+  }, [user]);
 
-  const payload = {};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsUpdating(true);
 
-  if (formData.status) payload.status = formData.status;
-  if (formData.priority) payload.priority = formData.priority;
-  if (formData.notes) payload.notes = formData.notes;
-  if (formData.assigned_to) payload.assigned_to_id = formData.assigned_to;
+    const payload = {};
+    if (formData.role) payload.role = formData.role;
+    if (formData.status) payload.status = formData.status;
+    if (formData.notes) payload.notes = formData.notes;
+    payload.is_staff = formData.is_staff;
+    payload.is_superuser = formData.is_superuser;
 
-  try {
-    await onUpdate(ticket.id, payload);
-    onClose();
-  } finally {
-    setIsUpdating(false);
-  }
-};
+    try {
+      await onUpdate(user.id, payload);
+      onClose();
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
-
-
-  if (!isOpen || !ticket) return null;
+  if (!isOpen || !user) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Quick Update - Ticket #{ticket.id}</CardTitle>
+          <CardTitle>Quick Update - {user.username}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Role
+              </label>
+              <Select 
+                value={formData.role} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Status
@@ -200,42 +213,34 @@ const handleSubmit = async (e) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Priority
-              </label>
-              <Select 
-                value={formData.priority} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Assign To
-              </label>
-              <Input
-                value={formData.assigned_to}
-                onChange={(e) => setFormData(prev => ({ ...prev, assigned_to: e.target.value }))}
-                placeholder="Enter username or email"
-              />
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_staff"
+                  checked={formData.is_staff}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_staff: checked }))}
+                />
+                <label htmlFor="is_staff" className="text-sm font-medium text-gray-700">
+                  Staff Member
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_superuser"
+                  checked={formData.is_superuser}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_superuser: checked }))}
+                />
+                <label htmlFor="is_superuser" className="text-sm font-medium text-gray-700">
+                  Superuser
+                </label>
+              </div>
             </div>
 
             <div>
@@ -251,12 +256,7 @@ const handleSubmit = async (e) => {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-                disabled={isUpdating}
-              >
+              <Button type="button" variant="outline" onClick={onClose} disabled={isUpdating}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isUpdating}>
@@ -266,7 +266,7 @@ const handleSubmit = async (e) => {
                     Updating...
                   </>
                 ) : (
-                  "Update Ticket"
+                  "Update User"
                 )}
               </Button>
             </div>
@@ -277,29 +277,28 @@ const handleSubmit = async (e) => {
   );
 };
 
-const AdminDashboard = () => {
+const AdminUserManagement = () => {
   const navigate = useNavigate();
-  const [tickets, setTickets] = useState([]);
-  const [filteredTickets, setFilteredTickets] = useState([]);
-  const [selectedTickets, setSelectedTickets] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
-  const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [quickActionTicket, setQuickActionTicket] = useState(null);
+  const [quickActionUser, setQuickActionUser] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
-    open: 0,
-    inProgress: 0,
-    resolved: 0,
-    closed: 0,
-    highPriority: 0,
-    unassigned: 0
+    staff: 0,
+    users: 0,
+    admins: 0,
+    active: 0,
+    inactive: 0,
+    suspended: 0
   });
 
   const handleLogout = () => {
@@ -307,12 +306,12 @@ const AdminDashboard = () => {
     window.location.href = "/login";
   };
 
-  const handleViewTicket = (ticketId) => {
-    navigate(`/ticket/${ticketId}`);
+  const handleViewUser = (userId) => {
+    navigate(`/admin/user/${userId}`);
   };
 
-  const handleQuickAction = (ticket) => {
-    setQuickActionTicket(ticket);
+  const handleQuickAction = (user) => {
+    setQuickActionUser(user);
     setShowQuickActions(true);
   };
 
@@ -322,101 +321,107 @@ const AdminDashboard = () => {
       if (!token) return;
 
       if (action === 'delete') {
-        // Delete selected tickets
+        // Delete selected users
         await Promise.all(
-          selectedTickets.map(ticketId =>
-            api.delete(`tickets/${ticketId}/`, {
+          selectedUsers.map(userId =>
+            api.delete(`users/${userId}/`, {
               headers: { Authorization: `Bearer ${token}` }
             })
           )
         );
-        
-        setTickets(prev => prev.filter(t => !selectedTickets.includes(t.id)));
-        setFilteredTickets(prev => prev.filter(t => !selectedTickets.includes(t.id)));
+        setUsers(prev => prev.filter(u => !selectedUsers.includes(u.id)));
+        setFilteredUsers(prev => prev.filter(u => !selectedUsers.includes(u.id)));
       } else if (action === 'update') {
-        // Update selected tickets
+        // Update selected users
         const updateData = {};
+        if (data.role) updateData.role = data.role;
         if (data.status) updateData.status = data.status;
-        if (data.assignee) updateData.assigned_to = data.assignee;
+        if (data.role === 'staff') updateData.is_staff = true;
+        if (data.role === 'admin') {
+          updateData.is_staff = true;
+          updateData.is_superuser = true;
+        }
 
         await Promise.all(
-          selectedTickets.map(ticketId =>
-            api.patch(`tickets/${ticketId}/`, updateData, {
+          selectedUsers.map(userId =>
+            api.patch(`users/${userId}/`, updateData, {
               headers: { Authorization: `Bearer ${token}` }
             })
           )
         );
-        
-        // Refresh tickets
-        fetchTickets();
+        // Refresh users
+        fetchUsers();
       }
-
-      setSelectedTickets([]);
+      setSelectedUsers([]);
     } catch (error) {
       console.error("Error performing bulk action:", error);
     }
   };
 
-  const handleTicketUpdate = async (ticketId, updateData) => {
+  const handleUserUpdate = async (userId, updateData) => {
     try {
       const token = getAuthToken();
       if (!token) return;
 
-      const response = await api.patch(`tickets/${ticketId}/`, updateData, {
+      const response = await api.patch(`users/${userId}/`, updateData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       // Update local state
-      setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...response.data } : t));
-      setFilteredTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...response.data } : t));
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...response.data } : u));
+      setFilteredUsers(prev => prev.map(u => u.id === userId ? { ...u, ...response.data } : u));
     } catch (error) {
-      console.error("Error updating ticket:", error);
+      console.error("Error updating user:", error);
     }
   };
 
-  const handleDeleteTicket = async (ticketId) => {
+  const handleDeleteUser = async (userId) => {
     try {
       const token = getAuthToken();
       if (!token) return;
 
-      await api.delete(`tickets/${ticketId}/`, {
+      await api.delete(`users/${userId}/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setTickets(prev => prev.filter(t => t.id !== ticketId));
-      setFilteredTickets(prev => prev.filter(t => t.id !== ticketId));
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      setFilteredUsers(prev => prev.filter(u => u.id !== userId));
     } catch (error) {
-      console.error("Error deleting ticket:", error);
+      console.error("Error deleting user:", error);
     }
   };
 
-  const handleSelectTicket = (ticketId, checked) => {
+  const handleSelectUser = (userId, checked) => {
     if (checked) {
-      setSelectedTickets(prev => [...prev, ticketId]);
+      setSelectedUsers(prev => [...prev, userId]);
     } else {
-      setSelectedTickets(prev => prev.filter(id => id !== ticketId));
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
     }
   };
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedTickets(paginatedTickets.map(t => t.id));
+      setSelectedUsers(paginatedUsers.map(u => u.id));
     } else {
-      setSelectedTickets([]);
+      setSelectedUsers([]);
     }
   };
 
-  const exportTickets = () => {
+  const exportUsers = () => {
     const csvContent = [
-      ['ID', 'Title', 'Status', 'Priority', 'Assigned To', 'Created', 'Updated'],
-      ...filteredTickets.map(ticket => [
-        ticket.id,
-        ticket.title,
-        ticket.status,
-        ticket.priority,
-        ticket.assigned_to_name || 'Unassigned',
-        new Date(ticket.created_at).toLocaleDateString(),
-        new Date(ticket.updated_at).toLocaleDateString()
+      ['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Role', 'Status', 'Staff', 'Superuser', 'Date Joined', 'Last Login'],
+      ...filteredUsers.map(user => [
+        user.id,
+        user.username,
+        user.email,
+        user.first_name || '',
+        user.last_name || '',
+        user.role || 'user',
+        user.status || 'active',
+        user.is_staff ? 'Yes' : 'No',
+        user.is_superuser ? 'Yes' : 'No',
+        new Date(user.date_joined).toLocaleDateString(),
+        user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -424,51 +429,10 @@ const AdminDashboard = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tickets-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `users-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
-  useEffect(() => {
-    fetchTickets();
-    const socket = new WebSocket(WEBSOCKET_URL);
-    // socket.onmessage = (event) => {
-    //   const data = JSON.parse(event.data);
-    //   if (data && data.type === "ticket_update") {
-    //     fetchTickets();
-    //   }
-    // };
-
-
-socket.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-
-  // The data here is the message sent in your backend's 'ticket_update' method:
-  // { action: "created"|"updated"|"deleted", ticket: {...} }
-  if (data && data.action && data.ticket) {
-    const { action, ticket } = data;
-
-    setTickets(prevTickets => {
-      switch (action) {
-        case "created":
-          // Add new ticket
-          return [...prevTickets, ticket];
-        case "updated":
-          // Replace updated ticket data
-          return prevTickets.map(t => (t.id === ticket.id ? ticket : t));
-        case "deleted":
-          // Remove deleted ticket
-          return prevTickets.filter(t => t.id !== ticket.id);
-        default:
-          return prevTickets;
-      }
-    });
-  }
-};
-
-
-    return () => socket.close();
-  }, []);
 
   const getAuthToken = () => {
     try {
@@ -480,7 +444,7 @@ socket.onmessage = (event) => {
     }
   };
 
-  const fetchTickets = async () => {
+  const fetchUsers = async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -491,120 +455,116 @@ socket.onmessage = (event) => {
         return;
       }
 
-      const response = await api.get("tickets/", {
+      const response = await api.get("users/", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
-      setTickets(response.data);
-      setFilteredTickets(response.data);
-      
+
+      setUsers(response.data);
+      setFilteredUsers(response.data);
+
       // Calculate stats
-      const ticketStats = {
+      const userStats = {
         total: response.data.length,
-        open: response.data.filter(t => t.status === 'open').length,
-        inProgress: response.data.filter(t => t.status === 'in progress').length,
-        resolved: response.data.filter(t => t.status === 'resolved').length,
-        closed: response.data.filter(t => t.status === 'closed').length,
-        highPriority: response.data.filter(t => t.priority === 'high').length,
-        unassigned: response.data.filter(t => !t.assigned_to).length
+        staff: response.data.filter(u => u.is_staff).length,
+        users: response.data.filter(u => !u.is_staff && !u.is_superuser).length,
+        admins: response.data.filter(u => u.is_superuser).length,
+        active: response.data.filter(u => u.status === 'active' || !u.status).length,
+        inactive: response.data.filter(u => u.status === 'inactive').length,
+        suspended: response.data.filter(u => u.status === 'suspended').length
       };
-      setStats(ticketStats);
-      
+      setStats(userStats);
     } catch (error) {
-      console.error("Error fetching tickets:", error);
-      setError("Failed to load tickets");
+      console.error("Error fetching users:", error);
+      setError("Failed to load users");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleFilter = () => {
-    let filtered = [...tickets];
-    
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((ticket) => ticket.status === statusFilter);
-    }
-    
-    if (priorityFilter !== "all") {
-      filtered = filtered.filter((ticket) => ticket.priority === priorityFilter);
+    let filtered = [...users];
+
+    if (roleFilter !== "all") {
+      if (roleFilter === "staff") {
+        filtered = filtered.filter(user => user.is_staff && !user.is_superuser);
+      } else if (roleFilter === "admin") {
+        filtered = filtered.filter(user => user.is_superuser);
+      } else if (roleFilter === "user") {
+        filtered = filtered.filter(user => !user.is_staff && !user.is_superuser);
+      }
     }
 
-    if (assigneeFilter === "unassigned") {
-      filtered = filtered.filter((ticket) => !ticket.assigned_to);
-    } else if (assigneeFilter !== "all") {
-      filtered = filtered.filter((ticket) => ticket.assigned_to === assigneeFilter);
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(user => (user.status || 'active') === statusFilter);
     }
-    
+
     if (search.trim() !== "") {
-      filtered = filtered.filter(
-        (ticket) =>
-          ticket.title.toLowerCase().includes(search.toLowerCase()) ||
-          (ticket.description &&
-            ticket.description.toLowerCase().includes(search.toLowerCase())) ||
-          (ticket.assigned_to_name &&
-            ticket.assigned_to_name.toLowerCase().includes(search.toLowerCase()))
+      filtered = filtered.filter(user =>
+        user.username.toLowerCase().includes(search.toLowerCase()) ||
+        (user.email && user.email.toLowerCase().includes(search.toLowerCase())) ||
+        (user.first_name && user.first_name.toLowerCase().includes(search.toLowerCase())) ||
+        (user.last_name && user.last_name.toLowerCase().includes(search.toLowerCase()))
       );
     }
-    
-    setFilteredTickets(filtered);
+
+    setFilteredUsers(filtered);
   };
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, priorityFilter, assigneeFilter, search]);
+  }, [roleFilter, statusFilter, search]);
 
   useEffect(() => {
     handleFilter();
     // eslint-disable-next-line
-  }, [statusFilter, priorityFilter, assigneeFilter, search, tickets]);
+  }, [roleFilter, statusFilter, search, users]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const clearFilters = () => {
+    setRoleFilter("all");
     setStatusFilter("all");
-    setPriorityFilter("all");
-    setAssigneeFilter("all");
     setSearch("");
   };
 
-  const hasActiveFilters = statusFilter !== "all" || priorityFilter !== "all" || assigneeFilter !== "all" || search.trim() !== "";
+  const hasActiveFilters = roleFilter !== "all" || statusFilter !== "all" || search.trim() !== "";
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "open":
-        return <AlertCircle className="w-4 h-4 text-blue-600" />;
-      case "in progress":
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      case "resolved":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case "closed":
-        return <CheckCircle className="w-4 h-4 text-gray-400" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-gray-400" />;
-    }
+  const getRoleIcon = (user) => {
+    if (user.is_superuser) return <Crown className="w-4 h-4 text-purple-600" />;
+    if (user.is_staff) return <Shield className="w-4 h-4 text-blue-600" />;
+    return <User className="w-4 h-4 text-gray-600" />;
   };
 
-  const getPriorityVariant = (priority) => {
-    switch (priority?.toLowerCase()) {
-      case "high":
-        return "destructive";
-      case "medium":
-        return "default";
-      case "low":
-        return "secondary";
+  const getRoleBadge = (user) => {
+    if (user.is_superuser) return <Badge variant="destructive">Admin</Badge>;
+    if (user.is_staff) return <Badge variant="default">Staff</Badge>;
+    return <Badge variant="secondary">User</Badge>;
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "active":
+        return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>;
+      case "inactive":
+        return <Badge variant="secondary">Inactive</Badge>;
+      case "suspended":
+        return <Badge variant="destructive">Suspended</Badge>;
       default:
-        return "outline";
+        return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>;
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-zinc-100">
-      
       {/* Enhanced Admin Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40 backdrop-blur-sm bg-white/95">
         <div className="container mx-auto px-4 py-4">
@@ -612,38 +572,35 @@ socket.onmessage = (event) => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-white" />
+                  <Users className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                    Admin Dashboard
+                    User Management
                   </h1>
                   <p className="text-sm text-gray-500">
-                    Manage all tickets and user assignments
+                    Manage users, roles, and permissions
                   </p>
                 </div>
               </div>
             </div>
-            
             <div className="flex items-center gap-3">
               <Button 
                 variant="outline"
-                onClick={exportTickets}
+                onClick={exportUsers}
                 className="flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 Export CSV
               </Button>
-
               <Button 
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/admin/tickets')}
                 variant="outline"
                 className="flex items-center gap-2"
               >
-                <User className="w-4 h-4" />
-                User View
+                <Ticket className="w-4 h-4" />
+                Tickets
               </Button>
-              
               <Button 
                 variant="outline" 
                 onClick={handleLogout}
@@ -658,39 +615,37 @@ socket.onmessage = (event) => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
-            title="Total Tickets"
+            title="Total Users"
             value={stats.total}
-            icon={Ticket}
+            icon={Users}
           />
           <StatsCard
-            title="Open Tickets"
-            value={stats.open}
-            change="+12% from last week"
-            icon={AlertCircle}
+            title="Staff Members"
+            value={stats.staff}
+            change="+3 this week"
+            icon={Shield}
           />
           <StatsCard
-            title="High Priority"
-            value={stats.highPriority}
-            change="-5% from last week"
-            icon={TrendingUp}
-            trend="down"
+            title="Regular Users"
+            value={stats.users}
+            change="+12 this week"
+            icon={User}
           />
           <StatsCard
-            title="Unassigned"
-            value={stats.unassigned}
-            icon={UserPlus}
+            title="Admins"
+            value={stats.admins}
+            icon={Crown}
           />
         </div>
 
         {/* Bulk Actions */}
         <BulkActionsBar
-          selectedTickets={selectedTickets}
+          selectedUsers={selectedUsers}
           onBulkAction={handleBulkAction}
-          onClearSelection={() => setSelectedTickets([])}
+          onClearSelection={() => setSelectedUsers([])}
         />
 
         {/* Filters */}
@@ -701,55 +656,40 @@ socket.onmessage = (event) => {
                 <Filter className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filters:</span>
               </div>
-              
+              <Select onValueChange={setRoleFilter} value={roleFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="user">Users</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="admin">Admins</SelectItem>
+                </SelectContent>
+              </Select>
               <Select onValueChange={setStatusFilter} value={statusFilter}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
-
-              <Select onValueChange={setPriorityFilter} value={priorityFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priority</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select onValueChange={setAssigneeFilter} value={assigneeFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Assignee" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Assignees</SelectItem>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                </SelectContent>
-              </Select>
-
               <div className="flex-1 min-w-[200px] max-w-md">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
                     type="text"
-                    placeholder="Search tickets, users..."
+                    placeholder="Search users..."
                     className="pl-10"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
               </div>
-
               {hasActiveFilters && (
                 <Button variant="outline" size="sm" onClick={clearFilters}>
                   <X className="w-4 h-4 mr-2" />
@@ -781,120 +721,119 @@ socket.onmessage = (event) => {
         {error && !isLoading && (
           <Card className="p-12 text-center">
             <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Tickets</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Users</h3>
             <p className="text-gray-500 mb-4">{error}</p>
-            <Button onClick={fetchTickets}>Try Again</Button>
+            <Button onClick={fetchUsers}>Try Again</Button>
           </Card>
         )}
 
-        {/* Admin Tickets Table */}
+        {/* Users Table */}
         {!isLoading && !error && (
           <div className="bg-white rounded-lg border shadow-sm">
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">All Tickets</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">All Users</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    {filteredTickets.length} of {tickets.length} tickets
-                    {selectedTickets.length > 0 && ` • ${selectedTickets.length} selected`}
+                    {filteredUsers.length} of {users.length} users
+                    {selectedUsers.length > 0 && ` • ${selectedUsers.length} selected`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleSelectAll(selectedTickets.length !== paginatedTickets.length)}
+                    onClick={() => handleSelectAll(selectedUsers.length !== paginatedUsers.length)}
                   >
-                    {selectedTickets.length === paginatedTickets.length ? "Deselect All" : "Select All"}
+                    {selectedUsers.length === paginatedUsers.length ? "Deselect All" : "Select All"}
                   </Button>
                 </div>
               </div>
             </div>
-            
+
             <div className="overflow-auto max-h-[600px]">
               <Table>
                 <TableHeader className="sticky top-0 bg-gray-50">
                   <TableRow>
                     <TableHead className="w-12">
                       <Checkbox
-                        checked={selectedTickets.length === paginatedTickets.length && paginatedTickets.length > 0}
+                        checked={selectedUsers.length === paginatedUsers.length && paginatedUsers.length > 0}
                         onCheckedChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead className="w-12">Status</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="w-24">Priority</TableHead>
-                    <TableHead className="w-32">Assigned To</TableHead>
-                    <TableHead className="w-32">Created</TableHead>
-                    <TableHead className="w-32">Updated</TableHead>
+                    <TableHead className="w-12">Role</TableHead>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                    <TableHead className="w-32">Joined</TableHead>
+                    <TableHead className="w-32">Last Login</TableHead>
                     <TableHead className="w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedTickets.map((ticket) => (
-                    <TableRow key={ticket.id} className="hover:bg-gray-50">
+                  {paginatedUsers.map((user) => (
+                    <TableRow key={user.id} className="hover:bg-gray-50">
                       <TableCell>
                         <Checkbox
-                          checked={selectedTickets.includes(ticket.id)}
-                          onCheckedChange={(checked) => handleSelectTicket(ticket.id, checked)}
+                          checked={selectedUsers.includes(user.id)}
+                          onCheckedChange={(checked) => handleSelectUser(user.id, checked)}
                         />
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center">
-                          {getStatusIcon(ticket.status)}
+                          {getRoleIcon(user)}
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">
                         <button
-                          onClick={() => handleViewTicket(ticket.id)}
+                          onClick={() => handleViewUser(user.id)}
                           className="max-w-[200px] truncate text-left hover:text-blue-600 hover:underline transition-colors"
-                          title={`Click to view details: ${ticket.title}`}
+                          title={`Click to view details: ${user.username}`}
                         >
-                          {ticket.title}
+                          {user.username}
                         </button>
                       </TableCell>
                       <TableCell>
-                        <div className="max-w-[300px] truncate text-gray-600" title={ticket.description}>
-                          {ticket.description}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getPriorityVariant(ticket.priority)}>
-                          {ticket.priority}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
                         <div className="flex items-center gap-1 text-sm">
-                          <User className="w-3 h-3 text-gray-400" />
-                          <span className="truncate max-w-[100px]">
-                            {ticket.assigned_to_name || (
-                              <span className="text-orange-500">Unassigned</span>
-                            )}
-                          </span>
+                          <Mail className="w-3 h-3 text-gray-400" />
+                          <span className="truncate max-w-[200px]">{user.email}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-500">
-                        <div>
-                          {new Date(ticket.created_at).toLocaleDateString()}
+                      <TableCell>
+                        <div className="max-w-[150px] truncate text-gray-600">
+                          {user.first_name || user.last_name ? 
+                            `${user.first_name || ''} ${user.last_name || ''}`.trim() : 
+                            <span className="text-gray-400">No name</span>
+                          }
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(user.status)}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500">
+                        <div>{new Date(user.date_joined).toLocaleDateString()}</div>
                         <div className="text-xs">
-                          {new Date(ticket.created_at).toLocaleTimeString([], {
+                          {new Date(user.date_joined).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit"
                           })}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-gray-500">
-                        <div>
-                          {new Date(ticket.updated_at).toLocaleDateString()}
-                        </div>
-                        <div className="text-xs">
-                          {new Date(ticket.updated_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
-                        </div>
+                        {user.last_login ? (
+                          <>
+                            <div>{new Date(user.last_login).toLocaleDateString()}</div>
+                            <div className="text-xs">
+                              {new Date(user.last_login).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="text-gray-400">Never</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -904,17 +843,24 @@ socket.onmessage = (event) => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewTicket(ticket.id)}>
+                            <DropdownMenuItem onClick={() => handleViewUser(user.id)}>
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleQuickAction(ticket)}>
+                            <DropdownMenuItem onClick={() => handleQuickAction(user)}>
                               <Settings className="mr-2 h-4 w-4" />
                               Quick Update
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteTicket(ticket.id)}
+                              onClick={() => handleUserUpdate(user.id, { is_staff: !user.is_staff })}
+                            >
+                              <UserCheck className="mr-2 h-4 w-4" />
+                              {user.is_staff ? 'Remove Staff' : 'Make Staff'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteUser(user.id)}
                               className="text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
@@ -927,18 +873,21 @@ socket.onmessage = (event) => {
                   ))}
                 </TableBody>
               </Table>
-              
+
               {/* Pagination Controls */}
-              {filteredTickets.length > 0 && (
+              {filteredUsers.length > 0 && (
                 <div className="flex items-center justify-between px-6 py-4 border-t">
                   <div className="flex items-center gap-4">
                     <div className="text-sm text-gray-500">
-                      Showing {startIndex + 1} to {Math.min(endIndex, filteredTickets.length)} of {filteredTickets.length} results
+                      Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} results
                     </div>
-                    <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-                      setItemsPerPage(parseInt(value));
-                      setCurrentPage(1);
-                    }}>
+                    <Select 
+                      value={itemsPerPage.toString()} 
+                      onValueChange={(value) => {
+                        setItemsPerPage(parseInt(value));
+                        setCurrentPage(1);
+                      }}
+                    >
                       <SelectTrigger className="w-20">
                         <SelectValue />
                       </SelectTrigger>
@@ -951,7 +900,6 @@ socket.onmessage = (event) => {
                     </Select>
                     <span className="text-sm text-gray-500">per page</span>
                   </div>
-                  
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -969,7 +917,6 @@ socket.onmessage = (event) => {
                     >
                       Previous
                     </Button>
-                    
                     <div className="flex items-center gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
@@ -982,7 +929,6 @@ socket.onmessage = (event) => {
                         } else {
                           pageNum = currentPage - 2 + i;
                         }
-                        
                         return (
                           <Button
                             key={pageNum}
@@ -996,7 +942,6 @@ socket.onmessage = (event) => {
                         );
                       })}
                     </div>
-                    
                     <Button
                       variant="outline"
                       size="sm"
@@ -1016,16 +961,16 @@ socket.onmessage = (event) => {
                   </div>
                 </div>
               )}
-              
+
               {/* Empty state for table */}
-              {paginatedTickets.length === 0 && !isLoading && (
+              {paginatedUsers.length === 0 && !isLoading && (
                 <div className="p-12 text-center">
                   <FileX className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No tickets found</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No users found</h3>
                   <p className="text-gray-500 mb-4">
                     {hasActiveFilters 
                       ? "Try adjusting your filters to see more results."
-                      : "No tickets have been created yet."
+                      : "No users have been created yet."
                     }
                   </p>
                   {hasActiveFilters && (
@@ -1042,16 +987,16 @@ socket.onmessage = (event) => {
 
       {/* Quick Actions Modal */}
       <QuickActionsModal
-        ticket={quickActionTicket}
+        user={quickActionUser}
         isOpen={showQuickActions}
         onClose={() => {
           setShowQuickActions(false);
-          setQuickActionTicket(null);
+          setQuickActionUser(null);
         }}
-        onUpdate={handleTicketUpdate}
+        onUpdate={handleUserUpdate}
       />
     </div>
   );
 };
 
-export default AdminDashboard;
+export default AdminUserManagement;
