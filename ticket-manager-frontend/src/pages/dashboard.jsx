@@ -557,7 +557,7 @@ const Dashboard = () => {
                           <div className="flex items-center gap-1 text-sm">
                             <User className="w-3 h-3 text-gray-400" />
                             <span className="truncate max-w-[100px]">
-                              {ticket.assigned_to_name || (
+                              {ticket.assigned_to || (
                                 <span className="text-orange-500">Unassigned</span>
                               )}
                             </span>

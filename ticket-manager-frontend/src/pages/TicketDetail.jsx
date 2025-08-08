@@ -708,7 +708,7 @@ useEffect(() => {
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Status
                   </label>
-                  {isEditing ? (
+                  {/* {isEditing ? (
                     <Select 
                       value={editForm.status} 
                       onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value }))}
@@ -723,14 +723,14 @@ useEffect(() => {
                         <SelectItem value="closed">Closed</SelectItem>
                       </SelectContent>
                     </Select>
-                  ) : (
+                  ) : ( */}
                     <div className="flex items-center gap-2">
                       {getStatusIcon(ticket.status)}
                       <Badge variant={getStatusVariant(ticket.status)}>
                         {ticket.status}
                       </Badge>
                     </div>
-                  )}
+                  {/* )} */}
                 </div>
 
                 <div>
@@ -762,22 +762,22 @@ useEffect(() => {
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Assigned To
                   </label>
-                  {isEditing ? (
+                  {/* {isEditing ? (
                     <Input
                       value={editForm.assigned_to}
                       onChange={(e) => setEditForm(prev => ({ ...prev, assigned_to: e.target.value }))}
                       placeholder="Assign to user"
                     />
-                  ) : (
+                  ) : ( */}
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-gray-400" />
                       <span className="text-sm">
-                        {ticket.assigned_to_name || (
+                        {ticket.assigned_to || (
                           <span className="text-orange-500">Unassigned</span>
                         )}
                       </span>
                     </div>
-                  )}
+                  {/* )} */}
                 </div>
 
                 <Separator />

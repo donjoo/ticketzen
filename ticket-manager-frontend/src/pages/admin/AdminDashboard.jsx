@@ -58,7 +58,7 @@ const StatsCard = ({ title, value, change, icon: Icon, trend = "up" }) => (
 );
 
 // Bulk Actions Component
-const BulkActionsBar = ({ selectedTickets, onBulkAction, onClearSelection }) => {
+const BulkActionsBar = ({staffList, selectedTickets, onBulkAction, onClearSelection }) => {
   const [bulkStatus, setBulkStatus] = useState("");
   const [bulkAssignee, setBulkAssignee] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -98,12 +98,18 @@ const BulkActionsBar = ({ selectedTickets, onBulkAction, onClearSelection }) => 
                 </SelectContent>
               </Select>
 
-              <Input
-                placeholder="Assign to..."
-                value={bulkAssignee}
-                onChange={(e) => setBulkAssignee(e.target.value)}
-                className="w-32"
-              />
+             <Select value={bulkAssignee} onValueChange={setBulkAssignee}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Assign to..." />
+            </SelectTrigger>
+            <SelectContent>
+              {staffList.map((staff) => (
+                <SelectItem key={staff.id} value={staff.id.toString()}>
+                  {staff.name || staff.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
               <Button
                 size="sm"
@@ -138,7 +144,7 @@ const BulkActionsBar = ({ selectedTickets, onBulkAction, onClearSelection }) => 
 };
 
 // Quick Actions Modal
-const QuickActionsModal = ({ ticket, isOpen, onClose, onUpdate }) => {
+const QuickActionsModal = ({ staffList, ticket, isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
     status: ticket?.status || "",
     priority: ticket?.priority || "",
@@ -146,6 +152,7 @@ const QuickActionsModal = ({ ticket, isOpen, onClose, onUpdate }) => {
     notes: ""
   });
   const [isUpdating, setIsUpdating] = useState(false);
+
 
   useEffect(() => {
     if (ticket) {
@@ -166,7 +173,10 @@ const handleSubmit = async (e) => {
   if (formData.status) payload.status = formData.status;
   if (formData.priority) payload.priority = formData.priority;
   if (formData.notes) payload.notes = formData.notes;
-  if (formData.assigned_to) payload.assigned_to_id = formData.assigned_to;
+  if (formData.assigned_to){
+
+  payload.assigned_to_id = parseInt(formData.assigned_to, 10); 
+}
 
   try {
     await onUpdate(ticket.id, payload);
@@ -231,11 +241,24 @@ const handleSubmit = async (e) => {
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Assign To
               </label>
-              <Input
-                value={formData.assigned_to}
-                onChange={(e) => setFormData(prev => ({ ...prev, assigned_to: e.target.value }))}
-                placeholder="Enter username or email"
-              />
+              <Select 
+  value={formData.assigned_to.toString()} 
+  onValueChange={(value) =>
+    setFormData(prev => ({ ...prev, assigned_to: value }))
+  }
+>
+  <SelectTrigger>
+    <SelectValue placeholder="Select staff..." />
+  </SelectTrigger>
+  <SelectContent>
+    {staffList.map((staff) => (
+      <SelectItem key={staff.id} value={staff.id.toString()}>
+        {staff.name || staff.email}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
             </div>
 
             <div>
@@ -292,6 +315,10 @@ const AdminDashboard = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [quickActionTicket, setQuickActionTicket] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [staffList, setStaffList] = useState([]);
+
+
+
   const [stats, setStats] = useState({
     total: 0,
     open: 0,
@@ -315,6 +342,27 @@ const AdminDashboard = () => {
     setQuickActionTicket(ticket);
     setShowQuickActions(true);
   };
+
+
+
+
+    useEffect(() => {
+  const fetchStaff = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await api.get("users/?is_staff=true", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStaffList(response.data);
+    } catch (error) {
+      console.error("Failed to fetch staff list:", error);
+    }
+  };
+
+  fetchStaff();
+}, []);
+
+
 
   const handleBulkAction = async (action, data) => {
     try {
@@ -688,9 +736,11 @@ socket.onmessage = (event) => {
 
         {/* Bulk Actions */}
         <BulkActionsBar
+          staffList={staffList}
           selectedTickets={selectedTickets}
           onBulkAction={handleBulkAction}
           onClearSelection={() => setSelectedTickets([])}
+  
         />
 
         {/* Filters */}
@@ -1049,6 +1099,7 @@ socket.onmessage = (event) => {
           setQuickActionTicket(null);
         }}
         onUpdate={handleTicketUpdate}
+        staffList={staffList}
       />
     </div>
   );

@@ -80,7 +80,17 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Add filter support if needed in query params
-        return User.objects.all().order_by('-date_joined')
+        queryset =  User.objects.all().order_by('-date_joined')
+
+        is_staff_param = self.request.query_params.get('is_staff')
+        if is_staff_param is not None:
+            # Convert string to boolean
+            if is_staff_param.lower() == 'true':
+                queryset = queryset.filter(is_staff=True)
+            elif is_staff_param.lower() == 'false':
+                queryset = queryset.filter(is_staff=False)
+        
+        return queryset
 
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
