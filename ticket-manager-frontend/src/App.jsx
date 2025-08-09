@@ -10,6 +10,7 @@ import TicketDetail from "./pages/TicketDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUserManagement from "./pages/admin/UserManagment";
 import StaffDashboard from "./pages/staff/StaffDashboard";
+import { LoggedOutRoute } from "./pages/ProtectedRoutes/ProtectedRoute";
 
 
 const App = () => {
@@ -17,11 +18,11 @@ const App = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+      <Route path="/login" element={ <LoggedOutRoute><Login /></LoggedOutRoute>} />
+      <Route path="/signup" element={ <LoggedOutRoute> <Signup /> </LoggedOutRoute>} />
       <Route
         path="/dashboard"
-        element={user ? <Dashboard /> : <Navigate to="/login" />}
+        element= {user ? <Dashboard /> : <Navigate to="/login" />}
       />
       <Route path="*" element={<Navigate to="/login" />} />
       <Route path="/tickets/:ticketId" element={<TicketDetail />} />

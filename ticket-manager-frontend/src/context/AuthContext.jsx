@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
         localStorage.setItem("authTokens", JSON.stringify(data));
         localStorage.setItem("user", JSON.stringify(data.user));
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       } else {
         alert("Invalid credentials");
       }
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem("authTokens");
     localStorage.removeItem("user");
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   return (

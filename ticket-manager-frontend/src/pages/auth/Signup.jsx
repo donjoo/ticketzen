@@ -99,7 +99,7 @@ function Signup() {
           });
 
           // Success: redirect to login page
-          navigate('/login');
+          navigate('/login', { replace: true });
         } catch (error) {
           console.error('Signup failed:', error);
 

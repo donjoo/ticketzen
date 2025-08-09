@@ -15,7 +15,23 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("");
-  const { loginUser } = useAuth();
+  const { loginUser, isAuthenticated } = useAuth();
+
+
+
+
+  useEffect(() => {
+    const tokens = JSON.parse(localStorage.getItem("authTokens"));
+    const token = tokens?.access;
+    if (token) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+
+
+
+
 
   const togglePasswordVisibility = () => {
     setShowPassword((prevState) => !prevState);
