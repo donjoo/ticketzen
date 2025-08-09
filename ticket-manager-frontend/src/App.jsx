@@ -9,6 +9,7 @@ import './App.css'
 import TicketDetail from "./pages/TicketDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUserManagement from "./pages/admin/UserManagment";
+import StaffDashboard from "./pages/staff/StaffDashboard";
 
 
 const App = () => {
@@ -26,6 +27,7 @@ const App = () => {
       <Route path="/tickets/:ticketId" element={<TicketDetail />} />
       <Route path="/admindashboard" element={<AdminDashboard />} />
       <Route path ='admin-usermanagement' element={<AdminUserManagement />} />
+      <Route path="/staff" element={<StaffDashboard />} />
     </Routes>
   );
 };

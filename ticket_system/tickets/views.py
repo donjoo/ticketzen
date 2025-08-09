@@ -148,6 +148,24 @@ class TicketViewSet(viewsets.ModelViewSet):
             return self.queryset
         return self.queryset.filter(user=user)
 
+    @action(detail=False, methods=['get'], url_path='staff')
+    def staff_tickets(self, request):
+        """Return tickets assigned to the currently logged-in staff user."""
+        user = request.user
+        print(user)
+        
+        if not user.is_staff:
+            return Response(
+                {'error': 'Only staff can access their assigned tickets.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        tickets = Ticket.objects.filter(assigned_to=user)
+        print(tickets)
+        serializer = self.get_serializer(tickets, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
     def perform_create(self, serializer):
         ticket = serializer.save(user=self.request.user)
         self._broadcast('created',ticket)
