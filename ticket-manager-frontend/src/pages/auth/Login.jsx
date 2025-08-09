@@ -169,7 +169,7 @@ const handleLogin = async (e) => {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?
-            <Link to="/register" className="text-blue-500 hover:underline">
+            <Link to="/signup" className="text-blue-500 hover:underline">
               Signup
             </Link>
 

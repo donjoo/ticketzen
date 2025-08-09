@@ -22,19 +22,11 @@ import TicketDetail from "./TicketDetail";
 import { useNavigate } from "react-router-dom";
 
 
-const tokens = JSON.parse(localStorage.getItem("authTokens"));
-let token = null;
-      
-if (tokens && tokens.access) {
-token = tokens.access;
-} else {
-console.log("No access token found");
-}
-
-const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+// const tokens = JSON.parse(localStorage.getItem("authTokens"));
+// const token = tokens?.access;
+// const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
 
 // const WEBSOCKET_URL = "ws://localhost:8000/ws/tickets/";
-
 // Skeleton component for loading state
 const TicketSkeleton = () => (
   <Card className="p-6">
@@ -118,6 +110,11 @@ const EmptyState = ({
   );
 };
 
+
+
+
+
+
 const Dashboard = () => {
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
@@ -135,9 +132,100 @@ const Dashboard = () => {
   const [deletingTicket, setDeletingTicket] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  
+  const tokens = JSON.parse(localStorage.getItem("authTokens"));
+  const token = tokens?.access;
+  const WEBSOCKET_URL = token 
+    ? `ws://localhost:8000/ws/tickets/updated/?token=${token}` 
+    : null;
+
 //   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const navigate = useNavigate();
+
+
+
+// useEffect(() => {
+//   const tokens = JSON.parse(localStorage.getItem("authTokens"));
+//   const token = tokens?.access;
+  
+//   if (!token) {
+//     console.error("No token found for WebSocket connection");
+//     return;
+//   }
+
+//   const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+
+
+  
+// }, []);
+
+
+useEffect(() => {
+  fetchTickets(); // load initial data
+
+  if (!token) {
+    console.error("No token found, skipping WebSocket connection");
+    return;
+  }
+
+  // Use the correct WebSocket URL pointing to your backend server
+  // NOT the frontend development server
+  const wsUrl = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+  const socket = new WebSocket(wsUrl);
+
+  socket.onopen = () => {
+    console.log("WebSocket connected:", wsUrl);
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log("Dashboard WS message:", data);
+
+      // If backend sends the whole new/updated ticket
+      if (data?.ticket) {
+        setTickets((prev) => {
+          const exists = prev.find((t) => t.id === data.ticket.id);
+          if (data.action === "deleted") {
+            // Remove from list
+            return prev.filter((t) => t.id !== data.ticket.id);
+          } else if (exists) {
+            // Update existing ticket
+            return prev.map((t) => (t.id === data.ticket.id ? data.ticket : t));
+          } else {
+            // Add new ticket to the beginning
+            return [data.ticket, ...prev];
+          }
+        });
+        // Update filtered list too
+        setFilteredTickets((prev) => {
+          const exists = prev.find((t) => t.id === data.ticket.id);
+          if (data.action === "deleted") {
+            return prev.filter((t) => t.id !== data.ticket.id);
+          } else if (exists) {
+            return prev.map((t) => (t.id === data.ticket.id ? data.ticket : t));
+          } else {
+            return [data.ticket, ...prev];
+          }
+        });
+      }
+      // If backend sends type identifier
+      else if (data?.type === "ticket_update") {
+        fetchTickets();
+      }
+    } catch (e) {
+      console.error("Error parsing WS message", e);
+    }
+  };
+
+  socket.onerror = (err) => console.error("WebSocket error", err);
+  socket.onclose = (e) => console.warn("WebSocket closed", e.code, e.reason);
+
+  return () => {
+    socket.close();
+  };
+}, [token]);
+
+
 
   const handleLogout = () => {
     localStorage.removeItem("authTokens");
@@ -152,6 +240,11 @@ const Dashboard = () => {
     setNewPriority(ticket.priority);
     setIsModalOpen(true);
   };
+
+
+
+
+
 
   const handleDeleteTicket = async (ticketId) => {
     try {
@@ -173,17 +266,17 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchTickets();
-    const socket = new WebSocket(WEBSOCKET_URL);
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data && data.type === "ticket_update") {
-        fetchTickets();
-      }
-    };
-    return () => socket.close();
-  }, []);
+  // useEffect(() => {
+  //   fetchTickets();
+  //   // const socket = new WebSocket(WEBSOCKET_URL);
+  //   socket.onmessage = (event) => {
+  //     const data = JSON.parse(event.data);
+  //     if (data && data.type === "ticket_update") {
+  //       fetchTickets();
+  //     }
+  //   };
+  //   return () => socket.close();
+  // }, []);
 
   const handleTicketCreated = (newTicket) => {
     setTickets((prev) => [newTicket, ...prev]);
