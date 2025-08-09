@@ -539,7 +539,7 @@ socket.onmessage = (event) => {
         return;
       }
 
-      const response = await api.get("tickets/", {
+      const response = await api.get("tickets/?view=all", {
         headers: { Authorization: `Bearer ${token}` }
       });
       

@@ -144,16 +144,24 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
-            return self.queryset
+        # if user.is_staff:
+        #     return self.queryset
         return self.queryset.filter(user=user)
+    def get_queryset(self):
+        user = self.request.user
+        view_all = self.request.query_params.get('view') == 'all'
+
+        if view_all and (user.is_staff or user.is_superuser):
+            return self.queryset  
+        return self.queryset.filter(user=user)
+
 
     @action(detail=False, methods=['get'], url_path='staff')
     def staff_tickets(self, request):
         """Return tickets assigned to the currently logged-in staff user."""
         user = request.user
         print(user)
-        
+
         if not user.is_staff:
             return Response(
                 {'error': 'Only staff can access their assigned tickets.'},
