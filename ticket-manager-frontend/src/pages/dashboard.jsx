@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import TicketDetail from "./TicketDetail";
 import { useNavigate } from "react-router-dom";
+import {jwtDecode} from "jwt-decode";
 
 
 // const tokens = JSON.parse(localStorage.getItem("authTokens"));
@@ -132,6 +133,7 @@ const Dashboard = () => {
   const [deletingTicket, setDeletingTicket] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [user, setUser] = useState(null);
   const tokens = JSON.parse(localStorage.getItem("authTokens"));
   const token = tokens?.access;
   const WEBSOCKET_URL = token 
@@ -224,6 +226,26 @@ useEffect(() => {
     socket.close();
   };
 }, [token]);
+
+
+useEffect(() => {
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      setUser({
+        username: decoded.username,
+        isSuperuser: decoded.is_superuser,
+        isStaff: decoded.is_staff
+      });
+      console.log("User data set from token:", decoded);
+    } catch (err) {
+      console.error("Error decoding token", err);
+    }
+    console.log("User data set from token:", user);
+    
+  }
+}, [token]);
+
 
 
 
@@ -496,15 +518,26 @@ useEffect(() => {
               </Button>
 
 
-
- <Button
+{user?.isSuperuser && (
+  <Button
     variant="outline"
     onClick={() => navigate("/admindashboard")}
     className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
   >
-    {/* <Shield className="w-4 h-4" /> */}
     Admin Dashboard
   </Button>
+)}
+
+{user?.isStaff && !user?.isSuperuser && (
+  <Button
+    variant="outline"
+    onClick={() => navigate("/staff")}
+    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
+  >
+    Staff Dashboard
+  </Button>
+)}
+
 
               
               <Button 

@@ -202,6 +202,7 @@ const StaffDashboard = () => {
   const [quickUpdateTicket, setQuickUpdateTicket] = useState(null);
   const [showQuickUpdate, setShowQuickUpdate] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
     assigned: 0,
     open: 0,
@@ -210,6 +211,33 @@ const StaffDashboard = () => {
     highPriority: 0,
     overdue: 0
   });
+
+useEffect(() => {
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      setUser({
+        username: decoded.username,
+        isSuperuser: decoded.is_superuser,
+        isStaff: decoded.is_staff
+      });
+      console.log("User data set from token:", decoded);
+    } catch (err) {
+      console.error("Error decoding token", err);
+    }
+    console.log("User data set from token:", user);
+    
+  }
+}, [token]);
+
+
+
+  useEffect(() => {
+    if (!user || !user.is_staff) {
+      navigate("/dashboard"); // or redirect to home page
+    }
+  }, [navigate, user]);
+
 
   const handleLogout = () => {
     localStorage.removeItem("authTokens");

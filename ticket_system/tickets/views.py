@@ -57,6 +57,20 @@ class UserProfileView(generics.RetrieveAPIView):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Add custom claims to the token
+        token['username'] = user.username
+        token['email'] = user.email
+        token['is_superuser'] = user.is_superuser
+        token['is_staff'] = user.is_staff
+
+        return token
+
+
     def validate(self, attrs):
         data = super().validate(attrs)
 
@@ -65,6 +79,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'id': self.user.id,
             'username': self.user.username,
             'email': self.user.email,
+            'is_superuser': self.user.is_superuser,
+            'is_staff' : self.user.is_staff
         }
 
         return data
