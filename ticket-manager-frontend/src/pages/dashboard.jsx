@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import TicketDetail from "./TicketDetail";
 import { useNavigate } from "react-router-dom";
 import {jwtDecode} from "jwt-decode";
+import { useAuth } from "@/context/useAuth";
 
 
 // const tokens = JSON.parse(localStorage.getItem("authTokens"));
@@ -134,6 +135,7 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [user, setUser] = useState(null);
+  const { logoutUser } = useAuth();
   const tokens = JSON.parse(localStorage.getItem("authTokens"));
   const token = tokens?.access;
   const WEBSOCKET_URL = token 
@@ -249,11 +251,6 @@ useEffect(() => {
 
 
 
-  const handleLogout = () => {
-    localStorage.removeItem("authTokens");
-    // Redirect to login page or handle logout logic
-    window.location.href = "/login";
-  };
 
   const handleEditTicket = (ticket) => {
     setEditingTicket(ticket);
@@ -542,7 +539,7 @@ useEffect(() => {
               
               <Button 
                 variant="outline" 
-                onClick={handleLogout}
+                onClick={logoutUser}
                 className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
               >
                 <LogOut className="w-4 h-4" />

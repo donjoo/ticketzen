@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import api from "@/serivces/api";
+import { useAuth } from "@/context/useAuth";
 
 const tokens = JSON.parse(localStorage.getItem("authTokens"));
 let token = null;
@@ -203,6 +204,7 @@ const StaffDashboard = () => {
   const [showQuickUpdate, setShowQuickUpdate] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [user, setUser] = useState(null);
+  const {logoutUser} = useAuth();
   const [stats, setStats] = useState({
     assigned: 0,
     open: 0,
@@ -232,17 +234,7 @@ useEffect(() => {
 
 
 
-  useEffect(() => {
-    if (!user || !user.is_staff) {
-      navigate("/dashboard"); // or redirect to home page
-    }
-  }, [navigate, user]);
 
-
-  const handleLogout = () => {
-    localStorage.removeItem("authTokens");
-    window.location.href = "/login";
-  };
 
   const handleViewTicket = (ticketId) => {
     navigate(`/ticket/${ticketId}`);
@@ -534,7 +526,7 @@ useEffect(() => {
               </Button>
               <Button 
                 variant="outline" 
-                onClick={handleLogout}
+                onClick={logoutUser}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
               >
                 <LogOut className="w-4 h-4" />

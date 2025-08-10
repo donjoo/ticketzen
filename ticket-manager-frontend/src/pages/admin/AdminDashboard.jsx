@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import api from "@/serivces/api";
-
+import { useAuth } from "@/context/useAuth";
 
 const tokens = JSON.parse(localStorage.getItem("authTokens"));
 let token = null;
@@ -316,7 +316,7 @@ const AdminDashboard = () => {
   const [quickActionTicket, setQuickActionTicket] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [staffList, setStaffList] = useState([]);
-
+  const {logoutUser} = useAuth()
 
 
   const [stats, setStats] = useState({
@@ -329,10 +329,6 @@ const AdminDashboard = () => {
     unassigned: 0
   });
 
-  const handleLogout = () => {
-    localStorage.removeItem("authTokens");
-    window.location.href = "/login";
-  };
 
   const handleViewTicket = (ticketId) => {
     navigate(`/ticket/${ticketId}`);
@@ -694,7 +690,7 @@ socket.onmessage = (event) => {
               
               <Button 
                 variant="outline" 
-                onClick={handleLogout}
+                onClick={logoutUser}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
               >
                 <LogOut className="w-4 h-4" />

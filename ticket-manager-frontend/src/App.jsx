@@ -10,7 +10,7 @@ import TicketDetail from "./pages/TicketDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUserManagement from "./pages/admin/UserManagment";
 import StaffDashboard from "./pages/staff/StaffDashboard";
-import { LoggedOutRoute } from "./pages/ProtectedRoutes/ProtectedRoute";
+import { LoggedOutRoute , ProtectedRoute} from "./pages/ProtectedRoutes/ProtectedRoute";
 
 
 const App = () => {
@@ -18,17 +18,24 @@ const App = () => {
 
   return (
     <Routes>
+      <Route path="*" element={<Navigate to="/login" />} />
       <Route path="/login" element={ <LoggedOutRoute><Login /></LoggedOutRoute>} />
       <Route path="/signup" element={ <LoggedOutRoute> <Signup /> </LoggedOutRoute>} />
       <Route
         path="/dashboard"
-        element= {user ? <Dashboard /> : <Navigate to="/login" />}
+        element= {<ProtectedRoute><Dashboard /></ProtectedRoute>}
       />
-      <Route path="*" element={<Navigate to="/login" />} />
-      <Route path="/tickets/:ticketId" element={<TicketDetail />} />
-      <Route path="/admindashboard" element={<AdminDashboard />} />
-      <Route path ='admin-usermanagement' element={<AdminUserManagement />} />
-      <Route path="/staff" element={<StaffDashboard />} />
+      
+      <Route path="/tickets/:ticketId" element={<ProtectedRoute><TicketDetail /></ProtectedRoute>} />
+      <Route path="/admindashboard" element={ <ProtectedRoute allowedRoles={["admin"]}>
+          <AdminDashboard />
+        </ProtectedRoute>} />
+      <Route path ='admin-usermanagement' element={ <ProtectedRoute allowedRoles={["admin"]}>
+          <AdminUserManagement />
+        </ProtectedRoute>} />
+      <Route path="/staff" element={ <ProtectedRoute allowedRoles={["staff", "admin"]}>
+          <StaffDashboard />
+        </ProtectedRoute>} />
     </Routes>
   );
 };
