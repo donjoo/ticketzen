@@ -41,7 +41,9 @@ function Login() {
 
 const handleLogin = async (e) => {
   e.preventDefault();
+  setLoading(true);
   await loginUser(username, password); // ✅ Use context
+  setLoading(false);
 };
 
 
