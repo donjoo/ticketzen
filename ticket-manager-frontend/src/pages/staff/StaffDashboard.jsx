@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import api from "@/serivces/api";
 import { useAuth } from "@/context/useAuth";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 // const tokens = JSON.parse(localStorage.getItem("authTokens"));
 // let token = null;
@@ -32,8 +33,9 @@ import { toast } from "sonner";
 // const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
 
 // Stats Card Component
-const StatsCard = ({ title, value, change, icon: Icon, trend = "up" }) => (
-  <Card>
+const StatsCard = ({ title, value, change, icon: Icon, trend = "up" ,  className,
+  ...props}) => (
+  <Card   className="h-full col-span-1 !w-auto" {...props} >
     <CardContent className="p-6">
       <div className="flex items-center justify-between">
         <div>
@@ -556,34 +558,12 @@ useEffect(() => {
 
       <div className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
-          <StatsCard
-            title="My Tickets"
-            value={stats.assigned}
-            icon={Ticket}
-          />
-          <StatsCard
-            title="Open"
-            value={stats.open}
-            change="+2 today"
-            icon={AlertCircle}
-          />
-          <StatsCard
-            title="In Progress"
-            value={stats.inProgress}
-            icon={Clock}
-          />
-          <StatsCard
-            title="Resolved"
-            value={stats.resolved}
-            change="+5 today"
-            icon={CheckCircle}
-          />
-          <StatsCard
-            title="High Priority"
-            value={stats.highPriority}
-            icon={Star}
-          />
+ <div className="grid grid-cols-3 gap-4 border p-4">
+          <StatsCard title="My Tickets" value={stats.assigned} icon={Ticket} />
+          <StatsCard title="Open" value={stats.open} change="+2 today" icon={AlertCircle} />
+          <StatsCard title="In Progress" value={stats.inProgress} icon={Clock} />
+          <StatsCard title="Resolved" value={stats.resolved} change="+5 today" icon={CheckCircle} />
+          <StatsCard title="High Priority" value={stats.highPriority} icon={Star} />
           <StatsCard
             title="Overdue"
             value={stats.overdue}
