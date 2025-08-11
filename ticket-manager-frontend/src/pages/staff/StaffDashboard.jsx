@@ -210,9 +210,15 @@ const StaffDashboard = () => {
   const {logoutUser} = useAuth();
   const tokens = JSON.parse(localStorage.getItem("authTokens"));
   const token = tokens?.access;
+//   const WEBSOCKET_URL = token 
+//     ? `ws://localhost:8000/ws/tickets/updated/?token=${token}` 
+//     : null;
+
   const WEBSOCKET_URL = token 
-    ? `ws://localhost:8000/ws/tickets/updated/?token=${token}` 
+    ? `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}` 
     : null;
+
+
   const [stats, setStats] = useState({
     assigned: 0,
     open: 0,

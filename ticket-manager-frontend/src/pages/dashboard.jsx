@@ -139,10 +139,12 @@ const Dashboard = () => {
   const { logoutUser } = useAuth();
   const tokens = JSON.parse(localStorage.getItem("authTokens"));
   const token = tokens?.access;
+  // const WEBSOCKET_URL = token 
+  //   ? `ws://localhost:8000/ws/tickets/updated/?token=${token}` 
+  //   : null;
   const WEBSOCKET_URL = token 
-    ? `ws://localhost:8000/ws/tickets/updated/?token=${token}` 
+    ? `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}` 
     : null;
-
 //   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const navigate = useNavigate();
 
@@ -174,7 +176,7 @@ useEffect(() => {
 
   // Use the correct WebSocket URL pointing to your backend server
   // NOT the frontend development server
-  const wsUrl = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+  const wsUrl = `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}`;
   const socket = new WebSocket(wsUrl);
 
   socket.onopen = () => {

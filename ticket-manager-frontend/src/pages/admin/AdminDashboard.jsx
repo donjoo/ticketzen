@@ -34,7 +34,11 @@ token = tokens.access;
 console.log("No access token found");
 }
 
-const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+// const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+const WEBSOCKET_URL = `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}`;
+
+
+
 
 // Stats Card Component
 const StatsCard = ({ title, value, change, icon: Icon, trend = "up" }) => (

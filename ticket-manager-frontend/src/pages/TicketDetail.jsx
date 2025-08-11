@@ -30,8 +30,8 @@ const TicketDetail = () => {
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const tokens = JSON.parse(localStorage.getItem("authTokens"));
   const token = tokens?.access;
-  const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
-
+  // const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+  const WEBSOCKET_URL = `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}`;
   // Edit form state
   const [editForm, setEditForm] = useState({
     title: "",
