@@ -13,4 +13,44 @@ api.interceptors.request.use(config => {
   return config;
 });
 
+
+
+
+
+api.interceptors.response.use(
+  res => res,
+  async err => {
+    const originalRequest = err.config;
+
+    if (err.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      const refresh = localStorage.getItem('refresh');
+      if (refresh) {
+        try {
+          const { data } = await axios.post(
+            import.meta.env.VITE_REFRESH_URL,
+            { refresh }
+          );
+
+          localStorage.setItem('access', data.access);
+          api.defaults.headers.Authorization = `Bearer ${data.access}`;
+          originalRequest.headers.Authorization = `Bearer ${data.access}`;
+
+          return api(originalRequest); // retry original request
+        } catch (refreshErr) {
+          console.error('Refresh token failed', refreshErr);
+          localStorage.clear();
+          window.location.href = '/login';
+        }
+      } else {
+        localStorage.clear();
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(err);
+  }
+);
+
 export default api;
