@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../serivces/api';
+import { toast } from "sonner";
+
 
 function Signup() {
   const navigate = useNavigate();
@@ -102,7 +104,7 @@ function Signup() {
           navigate('/login', { replace: true });
         } catch (error) {
           console.error('Signup failed:', error);
-
+            
           // Try to extract readable error message
           if (error.response && error.response.data) {
             const errorData = error.response.data;

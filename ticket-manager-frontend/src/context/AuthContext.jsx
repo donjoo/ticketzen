@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { toast } from "sonner";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -35,7 +35,11 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/dashboard", { replace: true });
       } else {
-        alert("Invalid credentials");
+        let message = "Invalid credentials"
+        toast.error(message, {
+          duration: 4000, // optional: how long the toast stays
+          position: "top-center" // optional: position of the toast
+        });
       }
     } catch (error) {
       console.error("Login error:", error);
