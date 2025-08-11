@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import api from "@/serivces/api";
 import { useAuth } from "@/context/useAuth";
+import { toast } from "sonner";
 
 // const tokens = JSON.parse(localStorage.getItem("authTokens"));
 // let token = null;
@@ -253,7 +254,10 @@ useEffect(() => {
   const handleTicketUpdate = async (ticketId, updateData) => {
     try {
       const token = getAuthToken();
-      if (!token) return;
+      if (!token){
+        toast.error("failed to update. Please log in again.");
+        return;
+        } 
 
       const response = await api.patch(`tickets/${ticketId}/?view=all`, updateData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -262,8 +266,16 @@ useEffect(() => {
       // Update local state
       setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...response.data } : t));
       setFilteredTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...response.data } : t));
+      toast.success("Ticket updated successfully!");
     } catch (error) {
       console.error("Error updating ticket:", error);
+
+    let message = "Failed to update ticket.";
+    if (error.response?.data) {
+      message = Object.values(error.response.data).flat().join(" ") || message;
+    }
+
+    toast.error(message);
     }
   };
 

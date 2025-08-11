@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/serivces/api";
 // import api from "../services/api";import { useRef } from "react";
+import { toast } from "sonner";
 
 const TicketDetail = () => {
   const {  ticketId } = useParams();
@@ -233,18 +234,22 @@ useEffect(() => {
 
       setTicket(response.data);
       setIsEditing(false);
-
+      toast.success("Ticket updated successfully!");
     } catch (error) {
       console.error("Error updating ticket:", error);
       
       if (error.response?.status === 401) {
         setError("Authentication expired. Please log in again.");
+         toast.error("Authentication expired. Please log in again.");
       } else if (error.response?.status === 403) {
         setError("You don't have permission to update this ticket.");
+        toast.error("You don't have permission to update this ticket.");
       } else if (error.response?.status === 404) {
         setError("Ticket not found. It may have been deleted.");
+        toast.error("Ticket not found. It may have been deleted.");
       } else {
         setError("Failed to update ticket. Please try again.");
+        toast.error("Failed to update ticket. Please try again.");
       }
     } finally {
       setIsSaving(false);
@@ -258,6 +263,7 @@ useEffect(() => {
       
       const token = getAuthToken();
       if (!token) {
+        toast.error("failed to delet. Please log in again.");
         setError("Authentication required. Please log in again.");
         return;
       }
@@ -272,19 +278,23 @@ useEffect(() => {
       });
 
       console.log("Ticket deleted successfully");
-
+      toast.success("Ticket deleted successfully!");
       // Navigate back to dashboard after successful deletion
       navigate('/dashboard');
     } catch (error) {
       console.error("Error deleting ticket:", error);
       
       if (error.response?.status === 401) {
+        toast.error("Authentication expired. Please log in again.");
         setError("Authentication expired. Please log in again.");
       } else if (error.response?.status === 403) {
+        toast.error("You don't have permission to delete this ticket.");
         setError("You don't have permission to delete this ticket.");
       } else if (error.response?.status === 404) {
+        toast.error("Ticket not found. It may have already been deleted.");
         setError("Ticket not found. It may have already been deleted.");
       } else {
+        toast.error("Failed to delete ticket. Please try again.");
         setError("Failed to delete ticket. Please try again.");
       }
     } finally {

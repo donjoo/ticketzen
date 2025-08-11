@@ -22,6 +22,7 @@ import TicketDetail from "./TicketDetail";
 import { useNavigate } from "react-router-dom";
 import {jwtDecode} from "jwt-decode";
 import { useAuth } from "@/context/useAuth";
+import { toast } from "sonner";
 
 
 // const tokens = JSON.parse(localStorage.getItem("authTokens"));
@@ -431,6 +432,7 @@ useEffect(() => {
         token = tokens.access;
       } else {
         console.log("No access token found");
+        toast.error("failed to create,Please log in again.");
         return;
       }
 
@@ -450,6 +452,7 @@ useEffect(() => {
         // Update tickets in state
         setTickets(prev => prev.map(t => t.id === editingTicket.id ? response.data : t));
         setFilteredTickets(prev => prev.map(t => t.id === editingTicket.id ? response.data : t));
+        toast.success("Ticket updated successfully!");
       } else {
         // Create new ticket
         response = await api.post("tickets/", ticketData, {
@@ -457,6 +460,7 @@ useEffect(() => {
         });
         
         handleTicketCreated(response.data);
+        toast.success("Ticket created successfully!");
       }
 
       setIsModalOpen(false);
@@ -466,6 +470,7 @@ useEffect(() => {
       setNewPriority("medium");
     } catch (error) {
       console.error("Error saving ticket:", error);
+      toast.error(message);
     } finally {
       setIsCreating(false);
     }

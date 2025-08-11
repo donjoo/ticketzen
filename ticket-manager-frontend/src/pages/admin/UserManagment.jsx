@@ -19,6 +19,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import api from "@/serivces/api";
 import { useAuth } from "@/context/useAuth";
+import { toast } from "sonner";
+
 
 const tokens = JSON.parse(localStorage.getItem("authTokens"));
 let token = null;
@@ -317,7 +319,10 @@ const AdminUserManagement = () => {
   const handleBulkAction = async (action, data) => {
     try {
       const token = getAuthToken();
-      if (!token) return;
+    if (!token) {
+      toast.error("Authentication required. Please log in again.");
+      return;
+    }
 
       if (action === 'delete') {
         // Delete selected users
@@ -330,6 +335,8 @@ const AdminUserManagement = () => {
         );
         setUsers(prev => prev.filter(u => !selectedUsers.includes(u.id)));
         setFilteredUsers(prev => prev.filter(u => !selectedUsers.includes(u.id)));
+
+        toast.success(`${selectedUsers.length} user(s) deleted successfully.`);
       } else if (action === 'update') {
         // Update selected users
         const updateData = {};
@@ -350,17 +357,22 @@ const AdminUserManagement = () => {
         );
         // Refresh users
         fetchUsers();
+        toast.success(`${selectedUsers.length} user(s) updated successfully.`);
       }
       setSelectedUsers([]);
     } catch (error) {
       console.error("Error performing bulk action:", error);
+    toast.error("Failed to perform bulk action. Please try again.");
     }
   };
 
   const handleUserUpdate = async (userId, updateData) => {
     try {
       const token = getAuthToken();
-      if (!token) return;
+    if (!token) {
+      toast.error("Authentication required. Please log in again.");
+      return;
+    }
 
       const response = await api.patch(`users/${userId}/`, updateData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -369,15 +381,21 @@ const AdminUserManagement = () => {
       // Update local state
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...response.data } : u));
       setFilteredUsers(prev => prev.map(u => u.id === userId ? { ...u, ...response.data } : u));
+
+        toast.success("User updated successfully.");
     } catch (error) {
       console.error("Error updating user:", error);
+    toast.error("Failed to update user. Please try again.");
     }
   };
 
   const handleDeleteUser = async (userId) => {
     try {
       const token = getAuthToken();
-      if (!token) return;
+    if (!token) {
+      toast.error("Authentication required. Please log in again.");
+      return;
+    }
 
       await api.delete(`users/${userId}/`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -385,8 +403,11 @@ const AdminUserManagement = () => {
 
       setUsers(prev => prev.filter(u => u.id !== userId));
       setFilteredUsers(prev => prev.filter(u => u.id !== userId));
+
+    toast.success("User deleted successfully.");
     } catch (error) {
       console.error("Error deleting user:", error);
+    toast.error("Failed to delete user. Please try again.");
     }
   };
 

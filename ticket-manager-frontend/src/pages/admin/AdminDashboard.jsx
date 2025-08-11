@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import api from "@/serivces/api";
 import { useAuth } from "@/context/useAuth";
+import { toast } from "sonner";
 
 const tokens = JSON.parse(localStorage.getItem("authTokens"));
 let token = null;
@@ -386,7 +387,11 @@ const AdminDashboard = () => {
   const handleBulkAction = async (action, data) => {
     try {
       const token = getAuthToken();
-      if (!token) return;
+      if (!token) {
+        toast.error("Authentication required. Please log in again.");
+        return
+
+      };
 
       if (action === 'delete') {
         // Delete selected tickets
@@ -400,6 +405,7 @@ const AdminDashboard = () => {
         
         setTickets(prev => prev.filter(t => !selectedTickets.includes(t.id)));
         setFilteredTickets(prev => prev.filter(t => !selectedTickets.includes(t.id)));
+        toast.success(`${selectedTickets.length} ticket(s) deleted successfully.`);
       } else if (action === 'update') {
         // Update selected tickets
         const updateData = {};
@@ -416,18 +422,23 @@ const AdminDashboard = () => {
         
         // Refresh tickets
         fetchTickets();
+        toast.success(`${selectedTickets.length} ticket(s) updated successfully.`);
       }
 
       setSelectedTickets([]);
     } catch (error) {
       console.error("Error performing bulk action:", error);
+      toast.error("Failed to perform bulk action. Please try again.");
     }
   };
 
   const handleTicketUpdate = async (ticketId, updateData) => {
     try {
       const token = getAuthToken();
-      if (!token) return;
+      if (!token) {
+      toast.error("Authentication required. Please log in again.");
+      return;
+    }
 
       const response = await api.patch(`tickets/${ticketId}/`, updateData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -436,15 +447,20 @@ const AdminDashboard = () => {
       // Update local state
       setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...response.data } : t));
       setFilteredTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...response.data } : t));
+      toast.success("Ticket updated successfully.");
     } catch (error) {
       console.error("Error updating ticket:", error);
+      toast.error("Failed to update ticket. Please try again.");
     }
   };
 
   const handleDeleteTicket = async (ticketId) => {
     try {
       const token = getAuthToken();
-      if (!token) return;
+      if (!token) {
+      toast.error("Authentication required. Please log in again.");
+      return;
+    }
 
       await api.delete(`tickets/${ticketId}/`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -452,8 +468,11 @@ const AdminDashboard = () => {
 
       setTickets(prev => prev.filter(t => t.id !== ticketId));
       setFilteredTickets(prev => prev.filter(t => t.id !== ticketId));
+
+      toast.success("Ticket deleted successfully.");
     } catch (error) {
       console.error("Error deleting ticket:", error);
+      toast.error("Failed to delete ticket. Please try again.");
     }
   };
 
