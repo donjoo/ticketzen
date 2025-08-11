@@ -693,14 +693,14 @@ socket.onmessage = (event) => {
             </div>
             
             <div className="flex items-center gap-3">
-              <Button 
+              {/* <Button 
                 variant="outline"
                 onClick={exportTickets}
                 className="flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 Export CSV
-              </Button>
+              </Button> */}
 
               <Button 
                 onClick={() => navigate('/dashboard')}

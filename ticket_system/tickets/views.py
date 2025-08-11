@@ -160,6 +160,10 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        mine_only = self.request.query_params.get('mine_only') == 'true'
+        if mine_only:
+            return self.queryset.filter(user=user)
+            
         if user.is_superuser:
             return self.queryset  # superadmins see everything
         view_all = self.request.query_params.get('view') == 'all'

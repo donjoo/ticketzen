@@ -20,15 +20,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import api from "@/serivces/api";
 import { useAuth } from "@/context/useAuth";
 
-const tokens = JSON.parse(localStorage.getItem("authTokens"));
-let token = null;
-if (tokens && tokens.access) {
-  token = tokens.access;
-} else {
-  console.log("No access token found");
-}
+// const tokens = JSON.parse(localStorage.getItem("authTokens"));
+// let token = null;
+// if (tokens && tokens.access) {
+//   token = tokens.access;
+// } else {
+//   console.log("No access token found");
+// }
 
-const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+// const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
 
 // Stats Card Component
 const StatsCard = ({ title, value, change, icon: Icon, trend = "up" }) => (
@@ -205,6 +205,11 @@ const StaffDashboard = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [user, setUser] = useState(null);
   const {logoutUser} = useAuth();
+  const tokens = JSON.parse(localStorage.getItem("authTokens"));
+  const token = tokens?.access;
+  const WEBSOCKET_URL = token 
+    ? `ws://localhost:8000/ws/tickets/updated/?token=${token}` 
+    : null;
   const [stats, setStats] = useState({
     assigned: 0,
     open: 0,
@@ -250,7 +255,7 @@ useEffect(() => {
       const token = getAuthToken();
       if (!token) return;
 
-      const response = await api.patch(`tickets/${ticketId}/`, updateData, {
+      const response = await api.patch(`tickets/${ticketId}/?view=all`, updateData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -267,7 +272,7 @@ useEffect(() => {
       const token = getAuthToken();
       if (!token || !currentUser) return;
 
-      await api.patch(`tickets/${ticketId}/`, {
+      await api.patch(`tickets/${ticketId}/?view=all`, {
         assigned_to_id: currentUser.id,
         status: 'in-progress'
       }, {
@@ -763,7 +768,7 @@ useEffect(() => {
                               <Edit className="mr-2 h-4 w-4" />
                               Quick Update
                             </DropdownMenuItem>
-                            {!ticket.assigned_to_id && (
+                            {!ticket.assigned_to && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleTakeTicket(ticket.id)}>

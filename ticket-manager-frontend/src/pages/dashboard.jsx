@@ -317,7 +317,7 @@ useEffect(() => {
         return;
       }
 
-      const response = await api.get("tickets/", {
+      const response = await api.get("tickets/?mine_only=true", {
         headers: { Authorization: `Bearer ${token}` },
       });
       
