@@ -158,25 +158,60 @@ class TicketViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'priority', 'status']
 
 
-    def get_queryset(self):
-        user = self.request.user
-        mine_only = self.request.query_params.get('mine_only') == 'true'
-        if mine_only:
-            return self.queryset.filter(user=user)
-            
-        if user.is_superuser:
-            return self.queryset  # superadmins see everything
-        view_all = self.request.query_params.get('view') == 'all'
-        if view_all and user.is_staff:
-            return self.queryset
-        return self.queryset.filter(user=user)
     # def get_queryset(self):
     #     user = self.request.user
-    #     view_all = self.request.query_params.get('view') == 'all'
+    #     mine_only = self.request.query_params.get('mine_only') == 'true'
+    #     if mine_only:
+    #         return self.queryset.filter(user=user)
 
-    #     if view_all and (user.is_staff or user.is_superuser):
-    #         return self.queryset  
+    #     if user.is_superuser:
+    #         return self.queryset  # superadmins see everything
+    #     view_all = self.request.query_params.get('view') == 'all'
+    #     if view_all and user.is_staff:
+    #         return self.queryset
     #     return self.queryset.filter(user=user)
+    def get_queryset(self):
+        user = self.request.user
+        params = self.request.query_params
+
+        mine_only = params.get('mine_only') == 'true'
+        view_all = params.get('view') == 'all'
+        user_filter = params.get('user')  # The ?user=<id> filter from frontend
+
+        # Base queryset
+        qs = self.queryset
+
+        # If regular user and not requesting mine_only, force mine_only behaviour
+        if not user.is_staff and not user.is_superuser and not mine_only:
+            return qs.filter(user=user)
+
+        # mine_only explicitly requested
+        if mine_only:
+            return qs.filter(user=user)
+
+        # Admin / staff view_all
+        if user.is_superuser or (user.is_staff and view_all):
+            if user_filter:
+                # If ?user= given, filter by that user id or username
+                # Detect if it's numeric for id or string for username
+                if user_filter.isdigit():
+                    qs = qs.filter(user__id=int(user_filter))
+                else:
+                    qs = qs.filter(user__username=user_filter)
+            return qs
+
+        # Staff, not superuser, and no view_all — can still filter by their assigned tickets
+        if user.is_staff:
+            qs = qs.filter(assigned_to=user)
+            if user_filter:
+                if user_filter.isdigit():
+                    qs = qs.filter(user__id=int(user_filter))
+                else:
+                    qs = qs.filter(user__username=user_filter)
+            return qs
+
+        # Default: Own tickets only
+        return qs.filter(user=user)
 
 
     @action(detail=False, methods=['get'], url_path='staff')

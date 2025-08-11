@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import { Plus, Filter, Search, AlertCircle, CheckCircle, Clock, User, X, Ticket, RefreshCw, FileX, Loader2, LogOut, Edit, Trash2, MoreHorizontal, Eye, Settings, Shield, Users, BarChart3, Download, UserPlus, Calendar, TrendingUp, Activity, Archive } from 'lucide-react';
+import { Plus, Filter, Search, AlertCircle, CheckCircle,  Clock, User, X, Ticket, RefreshCw, FileX, Loader2, LogOut, Edit, Trash2, MoreHorizontal, Eye, Settings, Shield, Users, BarChart3, Download, UserPlus, Calendar, TrendingUp, Activity, Archive } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -15,12 +15,15 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+
 // import api from "../services/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import api from "@/serivces/api";
 import { useAuth } from "@/context/useAuth";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { UserFilter } from "@/components/UserFilter";
 
 const tokens = JSON.parse(localStorage.getItem("authTokens"));
 let token = null;
@@ -341,6 +344,9 @@ const AdminDashboard = () => {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const {logoutUser} = useAuth()
+  const [userFilter, setUserFilter] = useState("all");
+  const [userList, setUserList] = useState([]);
+
 
 
   const [stats, setStats] = useState({
@@ -381,6 +387,24 @@ const AdminDashboard = () => {
 
   fetchStaff();
 }, []);
+
+
+useEffect(() => {
+  const fetchUsers = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await api.get("users/", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUserList(response.data);
+    } catch (error) {
+      console.error("Failed to fetch user list:", error);
+    }
+  };
+
+  fetchUsers();
+}, []);
+
 
 
 
@@ -566,26 +590,73 @@ socket.onmessage = (event) => {
     }
   };
 
-  const fetchTickets = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const token = getAuthToken();
+  // const fetchTickets = async () => {
+  //   try {
+  //     setIsLoading(true);
+  //     setError(null);
+  //     const token = getAuthToken();
       
-      if (!token) {
-        setError("Authentication required");
-        return;
-      }
+  //     if (!token) {
+  //       setError("Authentication required");
+  //       return;
+  //     }
 
-      const response = await api.get("tickets/?view=all", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+  //     const response = await api.get("tickets/?view=all", {
+  //       headers: { Authorization: `Bearer ${token}` }
+  //     });
       
-      setTickets(response.data);
-      setFilteredTickets(response.data);
+  //     setTickets(response.data);
+  //     setFilteredTickets(response.data);
       
-      // Calculate stats
-      const ticketStats = {
+  //     // Calculate stats
+  //     const ticketStats = {
+  //       total: response.data.length,
+  //       open: response.data.filter(t => t.status === 'open').length,
+  //       inProgress: response.data.filter(t => t.status === 'in progress').length,
+  //       resolved: response.data.filter(t => t.status === 'resolved').length,
+  //       closed: response.data.filter(t => t.status === 'closed').length,
+  //       highPriority: response.data.filter(t => t.priority === 'high').length,
+  //       unassigned: response.data.filter(t => !t.assigned_to).length
+  //     };
+  //     setStats(ticketStats);
+      
+  //   } catch (error) {
+  //     console.error("Error fetching tickets:", error);
+  //     setError("Failed to load tickets");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+
+
+
+
+  const fetchTickets = async () => {
+  try {
+    setIsLoading(true);
+    setError(null);
+    const token = getAuthToken();
+    if (!token) {
+      setError("Authentication required");
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.append("view", "all");
+
+    if (statusFilter !== "all") params.append("status", statusFilter);
+    if (priorityFilter !== "all") params.append("priority", priorityFilter);
+    if (userFilter !== "all") params.append("user", userFilter); // <— IMPORTANT
+
+    const response = await api.get(`tickets/?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    setTickets(response.data);
+    setFilteredTickets(response.data);
+
+          const ticketStats = {
         total: response.data.length,
         open: response.data.filter(t => t.status === 'open').length,
         inProgress: response.data.filter(t => t.status === 'in progress').length,
@@ -595,14 +666,16 @@ socket.onmessage = (event) => {
         unassigned: response.data.filter(t => !t.assigned_to).length
       };
       setStats(ticketStats);
-      
-    } catch (error) {
-      console.error("Error fetching tickets:", error);
-      setError("Failed to load tickets");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+    // stats calculation unchanged...
+  } catch (error) {
+    console.error("Error fetching tickets:", error);
+    setError("Failed to load tickets");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleFilter = () => {
     let filtered = [...tickets];
@@ -642,23 +715,37 @@ socket.onmessage = (event) => {
   const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
 
   // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, priorityFilter, assigneeFilter, search]);
+  // useEffect(() => {
+  //   setCurrentPage(1);
+  // }, [statusFilter, priorityFilter, assigneeFilter, search,userFilter]);
 
-  useEffect(() => {
-    handleFilter();
-    // eslint-disable-next-line
-  }, [statusFilter, priorityFilter, assigneeFilter, search, tickets]);
+  // useEffect(() => {
+  //   handleFilter();
+  //   // eslint-disable-next-line
+  // }, [statusFilter, priorityFilter, assigneeFilter, search, tickets,userFilter]);
+
+
+
+
+useEffect(() => {
+  setCurrentPage(1);
+  fetchTickets();
+}, [statusFilter, priorityFilter, assigneeFilter, userFilter, search]);
+
+
+
+
+
 
   const clearFilters = () => {
     setStatusFilter("all");
     setPriorityFilter("all");
     setAssigneeFilter("all");
+    setUserFilter("all"); 
     setSearch("");
   };
 
-  const hasActiveFilters = statusFilter !== "all" || priorityFilter !== "all" || assigneeFilter !== "all" || search.trim() !== "";
+  const hasActiveFilters = statusFilter !== "all" || priorityFilter !== "all" || assigneeFilter !== "all" ||  userFilter !== "all" ||  search.trim() !== "";
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -815,6 +902,25 @@ socket.onmessage = (event) => {
                 </SelectContent>
               </Select>
 
+
+{/* <Select onValueChange={setUserFilter} value={userFilter}>
+  <SelectTrigger className="w-[200px]">
+    <SelectValue placeholder="Filter by User" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">All Users</SelectItem>
+    {userList.map(u => (
+      <SelectItem key={u.id} value={u.id.toString()}>
+        {u.username || u.email}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select> */}
+                <UserFilter userFilter={userFilter}
+  setUserFilter={setUserFilter}
+  userList={userList}
+/>
+
               <Select onValueChange={setAssigneeFilter} value={assigneeFilter}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Assignee" />
@@ -913,6 +1019,7 @@ socket.onmessage = (event) => {
                     <TableHead>Title</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead className="w-24">Priority</TableHead>
+                    <TableHead className="w-32">User</TableHead>
                     <TableHead className="w-32">Assigned To</TableHead>
                     <TableHead className="w-32">Created</TableHead>
                     <TableHead className="w-32">Updated</TableHead>
@@ -952,6 +1059,16 @@ socket.onmessage = (event) => {
                           {ticket.priority}
                         </Badge>
                       </TableCell>
+                      
+
+                          <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <User className="w-3 h-3 text-gray-400" />
+                          <span className="truncate max-w-[100px]">
+                          {ticket.user}      </span>
+                        </div>
+                      </TableCell>
+
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <User className="w-3 h-3 text-gray-400" />
