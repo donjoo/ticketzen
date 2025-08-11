@@ -12,6 +12,7 @@ class Ticket(models.Model):
         ('open', 'Open'),
         ('in-progress', 'In Progress'),
         ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
     ]
 
 
