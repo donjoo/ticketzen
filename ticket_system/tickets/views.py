@@ -5,7 +5,7 @@ from rest_framework.serializers import ModelSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Ticket
 from .serializers import TicketSerializer
-from .permissions import IsOwnerOrAdmin
+from .permissions import IsOwnerOrAdmin, CanEditTicketPermission
 
 from asgiref.sync import async_to_sync
 from  channels.layers import get_channel_layer
@@ -151,7 +151,7 @@ def bulk_update(self, request):
 class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.select_related('user', 'assigned_to').all()
     serializer_class = TicketSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+    permission_classes = [permissions.IsAuthenticated,CanEditTicketPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'priority','user', 'assigned_to']
     search_fields = ['title', 'description']

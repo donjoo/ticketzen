@@ -482,6 +482,7 @@ useEffect(() => {
             <div className="flex items-center gap-2">
               {!isEditing ? (
                 <>
+{ticket.can_edit && (
                   <Button 
                     variant="outline" 
                     onClick={() => setIsEditing(true)}
@@ -490,6 +491,7 @@ useEffect(() => {
                     <Edit className="w-4 h-4" />
                     Edit
                   </Button>
+)}
                   <Button 
                     variant="destructive" 
                     onClick={() => setShowDeleteConfirm(true)}

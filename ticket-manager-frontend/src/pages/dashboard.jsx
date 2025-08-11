@@ -705,10 +705,12 @@ useEffect(() => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditTicket(ticket)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
+                               {ticket.can_edit && (
+        <DropdownMenuItem onClick={() => handleEditTicket(ticket)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+      )}
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteTicket(ticket.id)}
                                 className="text-red-600"
