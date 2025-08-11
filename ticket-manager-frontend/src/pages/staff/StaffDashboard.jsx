@@ -142,7 +142,7 @@ const QuickUpdateModal = ({ ticket, isOpen, onClose, onUpdate }) => {
                 </SelectContent>
               </Select>
             </div>
-
+{/* 
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Response to Customer
@@ -165,7 +165,7 @@ const QuickUpdateModal = ({ ticket, isOpen, onClose, onUpdate }) => {
                 placeholder="Add internal notes..."
                 rows={2}
               />
-            </div>
+            </div> */}
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={onClose} disabled={isUpdating}>
@@ -508,14 +508,14 @@ useEffect(() => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button 
+              {/* <Button 
                 variant="outline"
                 onClick={exportTickets}
                 className="flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 Export My Tickets
-              </Button>
+              </Button> */}
               <Button 
                 onClick={() => navigate('/dashboard')}
                 variant="outline"
