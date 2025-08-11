@@ -43,7 +43,10 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert("Server error");
+          toast.error("Server error. Please try again later.", {
+      duration: 4000,
+      position: "top-center",
+    });
     }
   };
 

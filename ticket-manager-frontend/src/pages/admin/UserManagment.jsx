@@ -605,22 +605,42 @@ const AdminUserManagement = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button 
+
+
+  <Button
+    variant="outline"
+    onClick={() => navigate("/admindashboard")}
+    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900"
+  >
+    Admin Dashboard
+  </Button>
+
+              {/* <Button 
                 variant="outline"
                 onClick={exportUsers}
                 className="flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 Export CSV
-              </Button>
-              <Button 
-                onClick={() => navigate('/admin/tickets')}
+              </Button> */}
+              {/* <Button 
+                onClick={() => navigate('/admindashboard')}
                 variant="outline"
                 className="flex items-center gap-2"
               >
                 <Ticket className="w-4 h-4" />
                 Tickets
-              </Button>
+              </Button> */}
+
+
+                  <Button 
+            onClick={() => navigate('/dashboard')}
+            variant="outline"
+            className="flex items-center gap-2"
+        >
+            <User className="w-4 h-4" />
+            User View
+        </Button>
               <Button 
                 variant="outline" 
                 onClick={logoutUser}

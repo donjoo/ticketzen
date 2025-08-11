@@ -495,7 +495,7 @@ useEffect(() => {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                    Tickets Dashboard
+                    TicketZen
                   </h1>
                   <p className="text-sm text-gray-500">
                     Manage and track support tickets

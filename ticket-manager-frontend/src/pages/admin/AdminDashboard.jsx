@@ -809,6 +809,16 @@ useEffect(() => {
               </Button> */}
 
               <Button 
+                onClick={() => navigate('/admin-usermanagement')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <User className="w-4 h-4" />
+                User management
+              </Button>
+
+
+              <Button 
                 onClick={() => navigate('/dashboard')}
                 variant="outline"
                 className="flex items-center gap-2"
