@@ -25,7 +25,8 @@ class TicketSerializer(serializers.ModelSerializer):
             'assigned_to',
             'assigned_to_id',
             'created_at',
-            'updated_at'
+            'updated_at',
+            'can_edit',
         ]
         read_only_fields = ['user', 'created_at', 'updated_at']
         extra_kwargs = {

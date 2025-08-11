@@ -23,6 +23,7 @@ class Ticket(models.Model):
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tickets')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    can_edit = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.title} - {self.status} ({self.priority})"

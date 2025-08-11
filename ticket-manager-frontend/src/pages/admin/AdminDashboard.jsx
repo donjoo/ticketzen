@@ -149,7 +149,7 @@ const QuickActionsModal = ({ staffList, ticket, isOpen, onClose, onUpdate }) => 
     status: ticket?.status || "",
     priority: ticket?.priority || "",
     assigned_to: ticket?.assigned_to || "",
-    notes: ""
+    can_edit: ticket?.can_edit ,
   });
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -160,7 +160,8 @@ const QuickActionsModal = ({ staffList, ticket, isOpen, onClose, onUpdate }) => 
         status: ticket.status || "",
         priority: ticket.priority || "",
         assigned_to: ticket.assigned_to || "",
-        notes: ""
+        can_edit: ticket.can_edit ,
+        // notes: ""
       });
     }
   }, [ticket]);
@@ -172,7 +173,8 @@ const handleSubmit = async (e) => {
 
   if (formData.status) payload.status = formData.status;
   if (formData.priority) payload.priority = formData.priority;
-  if (formData.notes) payload.notes = formData.notes;
+  payload.can_edit = formData.can_edit;
+
   if (formData.assigned_to){
 
   payload.assigned_to_id = parseInt(formData.assigned_to, 10); 
@@ -261,7 +263,7 @@ const handleSubmit = async (e) => {
 
             </div>
 
-            <div>
+            {/* <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
                 Admin Notes
               </label>
@@ -271,7 +273,28 @@ const handleSubmit = async (e) => {
                 placeholder="Add internal notes..."
                 rows={3}
               />
-            </div>
+            </div> */}
+
+
+ {/* Can Edit Checkbox */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="can_edit"
+              checked={formData.can_edit}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, can_edit: e.target.checked }))
+              }
+              className="w-4 h-4"
+            />
+            <label
+              htmlFor="can_edit"
+              className="text-sm font-medium text-gray-700"
+            >
+              Can Edit
+            </label>
+          </div>
+
 
             <div className="flex justify-end gap-3 pt-4">
               <Button 
