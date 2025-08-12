@@ -37,7 +37,11 @@ api.interceptors.response.use(
             );
 
             // Update local storage
-            const updatedTokens = { ...JSON.parse(tokens), access: data.access };
+            const updatedTokens = {
+              ...JSON.parse(tokens),
+              access: data.access,
+              ...(data.refresh && { refresh: data.refresh }) // if server sends new refresh token
+            };           
             localStorage.setItem("authTokens", JSON.stringify(updatedTokens));
 
             // Update axios defaults and retry request

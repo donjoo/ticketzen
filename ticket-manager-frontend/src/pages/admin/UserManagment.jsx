@@ -804,10 +804,10 @@ const AdminUserManagement = () => {
                     <TableHead className="w-12">Role</TableHead>
                     <TableHead>Username</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Name</TableHead>
+                    {/* <TableHead>Name</TableHead> */}
                     <TableHead className="w-24">Status</TableHead>
                     <TableHead className="w-32">Joined</TableHead>
-                    <TableHead className="w-32">Last Login</TableHead>
+                    {/* <TableHead className="w-32">Last Login</TableHead> */}
                     <TableHead className="w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -840,14 +840,14 @@ const AdminUserManagement = () => {
                           <span className="truncate max-w-[200px]">{user.email}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <div className="max-w-[150px] truncate text-gray-600">
                           {user.first_name || user.last_name ? 
                             `${user.first_name || ''} ${user.last_name || ''}`.trim() : 
                             <span className="text-gray-400">No name</span>
                           }
                         </div>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         {getStatusBadge(user.status)}
                       </TableCell>
@@ -860,7 +860,7 @@ const AdminUserManagement = () => {
                           })}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-500">
+                      {/* <TableCell className="text-sm text-gray-500">
                         {user.last_login ? (
                           <>
                             <div>{new Date(user.last_login).toLocaleDateString()}</div>
@@ -874,7 +874,7 @@ const AdminUserManagement = () => {
                         ) : (
                           <span className="text-gray-400">Never</span>
                         )}
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
