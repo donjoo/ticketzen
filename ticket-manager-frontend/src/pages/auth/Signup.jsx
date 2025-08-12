@@ -94,7 +94,9 @@ function Signup() {
       if (validate()) {
         setLoading(true); // Start loader
         try {
-          const response = await api.post('http://localhost:8000/api/register/', {
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+          const response = await api.post(`${API_BASE_URL}register/`, {
             username: formData.username,
             email: formData.email,
             password: formData.password,
@@ -104,7 +106,7 @@ function Signup() {
           navigate('/login', { replace: true });
         } catch (error) {
           console.error('Signup failed:', error);
-            
+
           // Try to extract readable error message
           if (error.response && error.response.data) {
             const errorData = error.response.data;
