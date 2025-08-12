@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 
 export const AuthContext = createContext();
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
 
   const loginUser = async (username, password) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/token/`, {
+      const response = await fetch(`${API_BASE_URL}token/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

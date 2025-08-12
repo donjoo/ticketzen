@@ -25,19 +25,32 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { UserFilter } from "@/components/UserFilter";
 
-const tokens = JSON.parse(localStorage.getItem("authTokens"));
-let token = null;
+// const tokens = JSON.parse(localStorage.getItem("authTokens"));
+// let token = null;
       
-if (tokens && tokens.access) {
-token = tokens.access;
-} else {
-console.log("No access token found");
-}
+// if (tokens && tokens.access) {
+// token = tokens.access;
+// } else {
+// console.log("No access token found");
+// }
 
-// const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
-const WEBSOCKET_URL = `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}`;
+// // const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
+// const WEBSOCKET_URL = `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}`;
 
 
+
+// const connectWebSocket = () => {
+//   const tokens = JSON.parse(localStorage.getItem("authTokens"));
+//   const token = tokens?.access;
+  
+//   if (!token) {
+//     console.error("No access token found for WebSocket");
+//     return null;
+//   }
+//   console.log(import.meta.env.VITE_WEBSOCKET_BASE_URL)
+//   const url = `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}`;
+//   return new WebSocket(url);
+// };
 
 
 // Stats Card Component
@@ -350,7 +363,8 @@ const AdminDashboard = () => {
   const {logoutUser} = useAuth()
   const [userFilter, setUserFilter] = useState("all");
   const [userList, setUserList] = useState([]);
-
+  const tokens = JSON.parse(localStorage.getItem("authTokens"));
+  const token = tokens?.access;
 
 
   const [stats, setStats] = useState({
@@ -543,46 +557,77 @@ useEffect(() => {
     window.URL.revokeObjectURL(url);
   };
 
-  useEffect(() => {
-    fetchTickets();
-    const socket = new WebSocket(WEBSOCKET_URL);
-    // socket.onmessage = (event) => {
-    //   const data = JSON.parse(event.data);
-    //   if (data && data.type === "ticket_update") {
-    //     fetchTickets();
-    //   }
-    // };
 
 
-socket.onmessage = (event) => {
-  const data = JSON.parse(event.data);
 
-  // The data here is the message sent in your backend's 'ticket_update' method:
-  // { action: "created"|"updated"|"deleted", ticket: {...} }
-  if (data && data.action && data.ticket) {
-    const { action, ticket } = data;
 
-    setTickets(prevTickets => {
-      switch (action) {
-        case "created":
-          // Add new ticket
-          return [...prevTickets, ticket];
-        case "updated":
-          // Replace updated ticket data
-          return prevTickets.map(t => (t.id === ticket.id ? ticket : t));
-        case "deleted":
-          // Remove deleted ticket
-          return prevTickets.filter(t => t.id !== ticket.id);
-        default:
-          return prevTickets;
-      }
-    });
+
+useEffect(() => {
+  fetchTickets(); // load initial data
+
+  if (!token) {
+    console.error("No token found, skipping WebSocket connection");
+    return;
   }
-};
+
+  const wsUrl = `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}`;
+  const socket = new WebSocket(wsUrl);
+
+  socket.onopen = () => {
+    console.log("WebSocket connected:", wsUrl);
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+
+      // Case 1: Backend sends ticket + action
+      if (data?.action && data?.ticket) {
+        const { action, ticket } = data;
+
+        setTickets((prev) => {
+          switch (action) {
+            case "created":
+              return [ticket, ...prev];
+            case "updated":
+              return prev.map((t) => (t.id === ticket.id ? ticket : t));
+            case "deleted":
+              return prev.filter((t) => t.id !== ticket.id);
+            default:
+              return prev;
+          }
+        });
+
+              // Update filtered list too
+      setFilteredTickets((prev) => {
+        switch (action) {
+          case "created":
+            return [ticket, ...prev];
+          case "updated":
+            return prev.map((t) => (t.id === ticket.id ? ticket : t));
+          case "deleted":
+            return prev.filter((t) => t.id !== ticket.id);
+          default:
+            return prev;
+        }
+      });
+
+      
+      }
+      // Case 2: Backend sends type identifier → refetch everything
+      else if (data?.type === "ticket_update") {
+        fetchTickets();
+      }
+    } catch (e) {
+      console.error("Error parsing WS message", e);
+    }
+  };
+
+  return () => socket.close();
+}, [token]);
 
 
-    return () => socket.close();
-  }, []);
+
 
   const getAuthToken = () => {
     try {
