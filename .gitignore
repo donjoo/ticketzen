@@ -9,6 +9,7 @@ __pycache__/
 .env
 venv/
 tick/
+tickz/
 env/
 ENV/
 .idea/
