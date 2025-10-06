@@ -1,6 +1,5 @@
 __pycache__/
 *.py[cod]
-*.sqlite3
 *.pyo
 *.pyd
 *.egg
@@ -17,7 +16,6 @@ ENV/
 .mypy_cache/
 .pytest_cache/
 .coverage
-*.db
 .DS_Store
 
 
