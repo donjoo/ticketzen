@@ -29,7 +29,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [  "ticketzen.onrender.com" ,"localhost", "127.0.0.1",    "localhost:5173"]
+ALLOWED_HOSTS = [  "ticketzen-sjyy.onrender.com","ticketzen.onrender.com" ,"localhost", "127.0.0.1",    "localhost:5173"]
 
 
 # Application definition
