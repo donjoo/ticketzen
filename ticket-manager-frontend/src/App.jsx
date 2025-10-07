@@ -26,7 +26,7 @@ const App = () => {
         element= {<ProtectedRoute><Dashboard /></ProtectedRoute>}
       />
       
-      <Route path="/tickets/:ticketId" element={<ProtectedRoute><TicketDetail /></ProtectedRoute>} />
+      <Route path="/tickets/:ticketId" element={<ProtectedRoute  ><TicketDetail /></ProtectedRoute>} />
       <Route path="/admindashboard" element={ <ProtectedRoute allowedRoles={["admin"]}>
           <AdminDashboard />
         </ProtectedRoute>} />

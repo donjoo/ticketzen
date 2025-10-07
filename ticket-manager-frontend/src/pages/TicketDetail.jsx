@@ -46,7 +46,7 @@ const TicketDetail = () => {
   useEffect(() => {
     if (ticketId) {
       fetchTicketDetails();
-      fetchComments();
+      // fetchComments();
     }
   }, [ticketId]);
 

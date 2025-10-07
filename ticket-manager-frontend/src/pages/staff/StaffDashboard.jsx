@@ -251,7 +251,7 @@ useEffect(() => {
 
 
   const handleViewTicket = (ticketId) => {
-    navigate(`/ticket/${ticketId}`);
+    navigate(`/tickets/${ticketId}`);
   };
 
   const handleQuickUpdate = (ticket) => {

@@ -379,7 +379,7 @@ const AdminDashboard = () => {
 
 
   const handleViewTicket = (ticketId) => {
-    navigate(`/ticket/${ticketId}`);
+    navigate(`/tickets/${ticketId}`);
   };
 
   const handleQuickAction = (ticket) => {
