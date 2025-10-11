@@ -22,9 +22,20 @@ function Login() {
 
   useEffect(() => {
     const tokens = JSON.parse(localStorage.getItem("authTokens"));
-    const token = tokens?.access;
-    if (token) {
-      navigate("/dashboard", { replace: true });
+    // const token = tokens?.access;
+    // if (token) {
+    //   navigate("/dashboard", { replace: true });
+    // }
+    const user = JSON.parse(localStorage.getItem("user"));
+    
+    if (tokens && user) {
+      if (user?.is_superuser) {
+        navigate("/admindashboard", { replace: true });
+      } else if (user?.is_staff) {
+        navigate("/staff", { replace: true });
+      } else if (user) {
+        navigate("/dashboard", { replace: true });
+      }
     }
   }, [isAuthenticated, navigate]);
 

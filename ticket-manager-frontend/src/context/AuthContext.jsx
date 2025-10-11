@@ -35,7 +35,19 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
         localStorage.setItem("authTokens", JSON.stringify(data));
         localStorage.setItem("user", JSON.stringify(data.user));
-        navigate("/dashboard", { replace: true });
+        
+        
+        // Redirect based on role
+        if (data.user.is_superuser) {
+          navigate("/admindashboard", { replace: true });
+        } else if (data.user.is_staff) {
+          navigate("/staff", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
+        
+        
+        
       } else {
         let message = "Invalid credentials"
         toast.error(message, {
