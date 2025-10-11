@@ -461,7 +461,7 @@ useEffect(() => {
           headers: { Authorization: `Bearer ${token}` },
         });
         
-        handleTicketCreated(response.data);
+        // handleTicketCreated(response.data);
         toast.success("Ticket created successfully!");
       }
 
