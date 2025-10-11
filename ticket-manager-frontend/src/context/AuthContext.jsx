@@ -36,14 +36,16 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("authTokens", JSON.stringify(data));
         localStorage.setItem("user", JSON.stringify(data.user));
         
-        
         // Redirect based on role
         if (data.user.is_superuser) {
           navigate("/admindashboard", { replace: true });
+          return;
         } else if (data.user.is_staff) {
           navigate("/staff", { replace: true });
+          return;
         } else {
           navigate("/dashboard", { replace: true });
+          
         }
         
         

@@ -46,5 +46,9 @@ function getUserRole(user) {
 
 export const LoggedOutRoute = ({ children }) => {
   const { user } = useAuth();
+
+  if (!user) return children;
+  if (user.is_superuser) return <Navigate to="/admindashboard" replace />;
+  if (user.is_staff) return <Navigate to="/staff" replace />;
   return user ? <Navigate to="/dashboard" replace /> : children;
 };

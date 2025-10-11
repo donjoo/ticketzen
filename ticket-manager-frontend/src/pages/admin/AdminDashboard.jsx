@@ -367,6 +367,7 @@ const AdminDashboard = () => {
   const token = tokens?.access;
 
 
+  console.log('admindashboard rendered');
   const [stats, setStats] = useState({
     total: 0,
     open: 0,

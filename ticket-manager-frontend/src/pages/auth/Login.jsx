@@ -22,10 +22,7 @@ function Login() {
 
   useEffect(() => {
     const tokens = JSON.parse(localStorage.getItem("authTokens"));
-    // const token = tokens?.access;
-    // if (token) {
-    //   navigate("/dashboard", { replace: true });
-    // }
+  
     const user = JSON.parse(localStorage.getItem("user"));
     
     if (tokens && user) {
@@ -37,7 +34,7 @@ function Login() {
         navigate("/dashboard", { replace: true });
       }
     }
-  }, [isAuthenticated, navigate]);
+  }, []);
 
 
 
