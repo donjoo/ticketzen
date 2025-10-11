@@ -868,7 +868,7 @@ useEffect(() => {
               </Button>
 
 
-              <Button 
+              {/* <Button 
                 onClick={() => navigate('/dashboard')}
                 variant="outline"
                 className="flex items-center gap-2"
@@ -876,7 +876,7 @@ useEffect(() => {
                 <User className="w-4 h-4" />
                 User View
               </Button>
-              
+               */}
               <Button 
                 variant="outline" 
                 onClick={logoutUser}

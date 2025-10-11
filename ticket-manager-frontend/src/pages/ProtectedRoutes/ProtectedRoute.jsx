@@ -16,6 +16,8 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
 
   // If allowedRoles is defined, check if user matches
   if (allowedRoles && !allowedRoles.includes(getUserRole(user))) {
+    if (user.is_superuser) return <Navigate to="/admindashboard" replace />; 
+    
     return <Navigate to="/dashboard" replace />;
   }
 

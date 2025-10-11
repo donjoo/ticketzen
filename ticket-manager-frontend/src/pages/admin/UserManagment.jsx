@@ -632,7 +632,7 @@ const AdminUserManagement = () => {
                 Tickets
               </Button> */}
 
-
+{/* 
                   <Button 
             onClick={() => navigate('/dashboard')}
             variant="outline"
@@ -640,7 +640,7 @@ const AdminUserManagement = () => {
         >
             <User className="w-4 h-4" />
             User View
-        </Button>
+        </Button> */}
               <Button 
                 variant="outline" 
                 onClick={logoutUser}

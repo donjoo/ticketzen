@@ -23,7 +23,7 @@ const App = () => {
       <Route path="/signup" element={ <LoggedOutRoute> <Signup /> </LoggedOutRoute>} />
       <Route
         path="/dashboard"
-        element= {<ProtectedRoute><Dashboard /></ProtectedRoute>}
+        element= {<ProtectedRoute allowedRoles={["staff","user"]}><Dashboard /></ProtectedRoute>}
       />
       
       <Route path="/tickets/:ticketId" element={<ProtectedRoute allowedRoles={["staff", "admin","user"]} ><TicketDetail /></ProtectedRoute>} />
