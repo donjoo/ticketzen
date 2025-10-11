@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions , viewsets , filters , status
+from rest_framework import generics, permissions , viewsets , filters , status, serializers
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from rest_framework.serializers import ModelSerializer
@@ -31,6 +31,11 @@ class RegisterUserSerializer(ModelSerializer):
         model = User
         fields = ['username', 'email', 'password']
         extra_kwargs = {'password': {'write_only': True}}
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This email already exists.")
+        return value
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -125,19 +130,19 @@ def bulk_update(self, request):
     updated_count = User.objects.filter(id__in=user_ids).update(**update_data)
     return Response({'updated': updated_count}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='bulk-delete')
-    def bulk_delete(self, request):
-        """
-        Handle bulk delete of users.
-        """
-        if not request.user.is_superuser:
-            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
-        user_ids = request.data.get('user_ids', [])
-        if not isinstance(user_ids, list) or not user_ids:
-            return Response({'error': 'user_ids must be a non-empty list'}, status=status.HTTP_400_BAD_REQUEST)
+@action(detail=False, methods=['post'], url_path='bulk-delete')
+def bulk_delete(self, request):
+    """
+    Handle bulk delete of users.
+    """
+    if not request.user.is_superuser:
+        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+    user_ids = request.data.get('user_ids', [])
+    if not isinstance(user_ids, list) or not user_ids:
+        return Response({'error': 'user_ids must be a non-empty list'}, status=status.HTTP_400_BAD_REQUEST)
 
-        deleted_count, _ = User.objects.filter(id__in=user_ids).delete()
-        return Response({'deleted': deleted_count}, status=status.HTTP_200_OK)
+    deleted_count, _ = User.objects.filter(id__in=user_ids).delete()
+    return Response({'deleted': deleted_count}, status=status.HTTP_200_OK)
 
 
 
