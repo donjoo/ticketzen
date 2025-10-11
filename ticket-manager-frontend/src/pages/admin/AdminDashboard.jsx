@@ -10,7 +10,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle ,CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,6 +24,7 @@ import { useAuth } from "@/context/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { UserFilter } from "@/components/UserFilter";
+import ConfirmModal from "@/components/ConfirmModal";
 
 // const tokens = JSON.parse(localStorage.getItem("authTokens"));
 // let token = null;
@@ -79,7 +80,7 @@ const StatsCard = ({ title, value, change, icon: Icon, trend = "up" }) => (
 );
 
 // Bulk Actions Component
-const BulkActionsBar = ({staffList, selectedTickets, onBulkAction, onClearSelection }) => {
+const BulkActionsBar = ({staffList, selectedTickets, onBulkAction, onClearSelection , onDelete}) => {
   const [bulkStatus, setBulkStatus] = useState("");
   const [bulkAssignee, setBulkAssignee] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -143,7 +144,7 @@ const BulkActionsBar = ({staffList, selectedTickets, onBulkAction, onClearSelect
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={() => handleBulkAction('delete')}
+                 onClick={onDelete}   // ✅ use the prop            
                 disabled={isProcessing}
               >
                 {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
@@ -365,7 +366,9 @@ const AdminDashboard = () => {
   const [userList, setUserList] = useState([]);
   const tokens = JSON.parse(localStorage.getItem("authTokens"));
   const token = tokens?.access;
-
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState(null);
+  const [isBulkDelete, setIsBulkDelete] = useState(false); // bulk delete
 
   console.log('admindashboard rendered');
   const [stats, setStats] = useState({
@@ -425,6 +428,16 @@ useEffect(() => {
 }, []);
 
 
+const handleDeleteClick = (ticketId) => {
+  setTicketToDelete(ticketId);
+  setIsDeleteModalOpen(true);
+};
+
+const confirmDelete = () => {
+  handleDeleteTicket(ticketToDelete); // your existing delete function
+  setIsDeleteModalOpen(false);
+  setTicketToDelete(null);
+};
 
 
   const handleBulkAction = async (action, data) => {
@@ -437,6 +450,9 @@ useEffect(() => {
       };
 
       if (action === 'delete') {
+       
+
+
         // Delete selected tickets
         await Promise.all(
           selectedTickets.map(ticketId =>
@@ -498,6 +514,8 @@ useEffect(() => {
   };
 
   const handleDeleteTicket = async (ticketId) => {
+
+
     try {
       const token = getAuthToken();
       if (!token) {
@@ -925,7 +943,10 @@ useEffect(() => {
           selectedTickets={selectedTickets}
           onBulkAction={handleBulkAction}
           onClearSelection={() => setSelectedTickets([])}
-  
+          onDelete={() => {
+            setIsBulkDelete(true);
+            setIsDeleteModalOpen(true);
+          }}  
         />
 
         {/* Filters */}
@@ -1179,7 +1200,7 @@ useEffect(() => {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteTicket(ticket.id)}
+                              onClick={() => handleDeleteClick(ticket.id)}
                               className="text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
@@ -1316,6 +1337,40 @@ useEffect(() => {
         onUpdate={handleTicketUpdate}
         staffList={staffList}
       />
+{/* 
+      <ConfirmModal
+  isOpen={isDeleteModalOpen}
+  onClose={() => setIsDeleteModalOpen(false)}
+  onConfirm={confirmDelete}
+  message="Are you sure you want to delete this ticket? This action cannot be undone."
+/> */}
+
+<ConfirmModal
+  isOpen={isDeleteModalOpen}
+  onClose={() => {
+    setIsDeleteModalOpen(false);
+    setTicketToDelete(null);
+    setIsBulkDelete(false);
+  }}
+  onConfirm={async () => {
+    if (isBulkDelete) {
+      await handleBulkAction("delete"); // your bulk delete function
+    } else if (ticketToDelete) {
+      await handleDeleteTicket(ticketToDelete); // single delete function
+    }
+
+    // Reset state
+    setIsDeleteModalOpen(false);
+    setTicketToDelete(null);
+    setIsBulkDelete(false);
+  }}
+  message={
+    isBulkDelete
+      ? `Are you sure you want to delete ${selectedTickets.length} ticket(s)?`
+      : "Are you sure you want to delete this ticket?"
+  }
+/>
+
     </div>
   );
 };
