@@ -176,105 +176,120 @@ class TicketViewSet(viewsets.ModelViewSet):
     #         return self.queryset
     #     return self.queryset.filter(user=user)
     def get_queryset(self):
-        user = self.request.user
-        params = self.request.query_params
+        try:
+            user = self.request.user
+            params = self.request.query_params
 
-        mine_only = params.get('mine_only') == 'true'
-        view_all = params.get('view') == 'all'
-        user_filter = params.get('user')  # The ?user=<id> filter from frontend
+            mine_only = params.get('mine_only') == 'true'
+            view_all = params.get('view') == 'all'
+            user_filter = params.get('user')  # The ?user=<id> filter from frontend
 
-        # Base queryset
-        qs = self.queryset
+            # Base queryset
+            qs = self.queryset
 
-        # If regular user and not requesting mine_only, force mine_only behaviour
-        if not user.is_staff and not user.is_superuser and not mine_only:
+            # If regular user and not requesting mine_only, force mine_only behaviour
+            if not user.is_staff and not user.is_superuser and not mine_only:
+                return qs.filter(user=user)
+
+            # mine_only explicitly requested
+            if mine_only:
+                return qs.filter(user=user)
+
+            # Admin / staff view_all
+            if user.is_superuser or (user.is_staff and view_all):
+                if user_filter:
+                    # If ?user= given, filter by that user id or username
+                    # Detect if it's numeric for id or string for username
+                    if user_filter.isdigit():
+                        qs = qs.filter(user__id=int(user_filter))
+                    else:
+                        qs = qs.filter(user__username=user_filter)
+                return qs
+
+            # Staff, not superuser, and no view_all — can still filter by their assigned tickets
+            if user.is_staff:
+                qs = qs.filter(assigned_to=user)
+                if user_filter:
+                    if user_filter.isdigit():
+                        qs = qs.filter(user__id=int(user_filter))
+                    else:
+                        qs = qs.filter(user__username=user_filter)
+                return qs
+
+            # Default: Own tickets only
             return qs.filter(user=user)
-
-        # mine_only explicitly requested
-        if mine_only:
-            return qs.filter(user=user)
-
-        # Admin / staff view_all
-        if user.is_superuser or (user.is_staff and view_all):
-            if user_filter:
-                # If ?user= given, filter by that user id or username
-                # Detect if it's numeric for id or string for username
-                if user_filter.isdigit():
-                    qs = qs.filter(user__id=int(user_filter))
-                else:
-                    qs = qs.filter(user__username=user_filter)
-            return qs
-
-        # Staff, not superuser, and no view_all — can still filter by their assigned tickets
-        if user.is_staff:
-            qs = qs.filter(assigned_to=user)
-            if user_filter:
-                if user_filter.isdigit():
-                    qs = qs.filter(user__id=int(user_filter))
-                else:
-                    qs = qs.filter(user__username=user_filter)
-            return qs
-
-        # Default: Own tickets only
-        return qs.filter(user=user)
-
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'], url_path='staff')
     def staff_tickets(self, request):
-        """Return tickets assigned to the currently logged-in staff user."""
-        user = request.user
-        print(user)
+        try:
+            """Return tickets assigned to the currently logged-in staff user."""
+            user = request.user
+            print(user)
 
-        if not user.is_staff:
-            return Response(
-                {'error': 'Only staff can access their assigned tickets.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            if not user.is_staff:
+                return Response(
+                    {'error': 'Only staff can access their assigned tickets.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
-        tickets = Ticket.objects.filter(assigned_to=user)
-        print(tickets)
-        serializer = self.get_serializer(tickets, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+            tickets = Ticket.objects.filter(assigned_to=user)
+            print(tickets)
+            serializer = self.get_serializer(tickets, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_create(self, serializer):
-        ticket = serializer.save(user=self.request.user)
-        self._broadcast('created',ticket)
-
+        try:
+            ticket = serializer.save(user=self.request.user)
+            self._broadcast('created',ticket)
+        except Exception as e:
+            raise serializers.ValidationError({'error': str(e)})
 
     def perform_update(self, serializer):
-        print(self.request.data)  # see raw incoming dat
-        ticket = serializer.save()
-        self._broadcast('updated', ticket)  
-
+        try:
+            print(self.request.data)  # see raw incoming dat
+            ticket = serializer.save()
+            self._broadcast('updated', ticket)  
+        except Exception as e:
+            raise serializers.ValidationError({'error': str(e)})
 
     def perform_destroy(self, instance):
         user = self.request.user
-
-        # Only staff or admin can delete
-        if not (user.is_staff or user.is_superuser):
-            raise PermissionDenied("You do not have permission to delete this ticket.")        
-        ticket_data = TicketSerializer(instance).data
-        instance.delete()   
-        self._broadcast('deleted', ticket_data,serialized=True)
+        try:
+            # Only staff or admin can delete
+            if not (user.is_staff or user.is_superuser):
+                raise PermissionDenied("You do not have permission to delete this ticket.")        
+            ticket_data = TicketSerializer(instance).data
+            instance.delete()   
+            self._broadcast('deleted', ticket_data,serialized=True)
+        except PermissionDenied as e:
+            raise e
+        except Exception as e:
+            raise serializers.ValidationError({'error': str(e)})
 
 
     
 
     def _broadcast(self, action , ticket_obj,serialized=False):
-        layer = get_channel_layer()
-        if serialized:
-            payload = ticket_obj
-        else:
-            payload = TicketSerializer(ticket_obj).data
-        message = {
-            'action': action,
-            'ticket': payload
-        }
-        async_to_sync(layer.group_send)(
-            'ticket_updates', 
-            {
-                'type': 'ticket_update',
-                'message': message
-            }  
-        )
+        try:
+            layer = get_channel_layer()
+            if serialized:
+                payload = ticket_obj
+            else:
+                payload = TicketSerializer(ticket_obj).data
+            message = {
+                'action': action,
+                'ticket': payload
+            }
+            async_to_sync(layer.group_send)(
+                'ticket_updates', 
+                {
+                    'type': 'ticket_update',
+                    'message': message
+                }  
+            )
+        except Exception as e:
+            print(f"WebSocket broadcast error: {e}")
