@@ -18,6 +18,22 @@ from rest_framework.decorators import action
 from django.contrib.auth import get_user_model
 from .serializers import  BulkUserUpdateSerializer
 from rest_framework.exceptions import PermissionDenied
+import logging
+
+
+# -------------------- Logging setup --------------------
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        logging.FileHandler("ticket_system.log"),
+        logging.StreamHandler()
+    ]
+)
+
+
+
 
 # Djangos built user authentication for DRF + react project
 
@@ -44,6 +60,7 @@ class RegisterUserSerializer(ModelSerializer):
             password = validated_data['password'],
 
         )
+        logger.info(f"New user created: {user.username} ({user.id})")
         return user
 
 
@@ -87,7 +104,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'is_superuser': self.user.is_superuser,
             'is_staff' : self.user.is_staff
         }
-
+        logger.info(f"User logged in: {self.user.username} ({self.user.id})")
         return data
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -118,33 +135,45 @@ class UserViewSet(viewsets.ModelViewSet):
 
 @action(detail=False, methods=['patch'], url_path='bulk-update')
 def bulk_update(self, request):
-    if not request.user.is_superuser:
-        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        if not request.user.is_superuser:
+            logger.warning(f"Unauthorized bulk update attempt by {request.user.username}")
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
-    serializer = BulkUserUpdateSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+        serializer = BulkUserUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-    user_ids = serializer.validated_data['user_ids']
-    update_data = serializer.validated_data['update_data']
+        user_ids = serializer.validated_data['user_ids']
+        update_data = serializer.validated_data['update_data']
 
-    updated_count = User.objects.filter(id__in=user_ids).update(**update_data)
-    return Response({'updated': updated_count}, status=status.HTTP_200_OK)
+        updated_count = User.objects.filter(id__in=user_ids).update(**update_data)
+        logger.info(f"Bulk updated {updated_count} users by {request.user.username}")
+        return Response({'updated': updated_count}, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(f"Bulk update error: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @action(detail=False, methods=['post'], url_path='bulk-delete')
 def bulk_delete(self, request):
     """
     Handle bulk delete of users.
     """
-    if not request.user.is_superuser:
-        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
-    user_ids = request.data.get('user_ids', [])
-    if not isinstance(user_ids, list) or not user_ids:
-        return Response({'error': 'user_ids must be a non-empty list'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        if not request.user.is_superuser:
+            logger.warning(f"Unauthorized bulk delete attempt by {request.user.username}")
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        user_ids = request.data.get('user_ids', [])
+        if not isinstance(user_ids, list) or not user_ids:
+            logger.warning(f"Invalid bulk delete data by {request.user.username}: {user_ids}")
+            return Response({'error': 'user_ids must be a non-empty list'}, status=status.HTTP_400_BAD_REQUEST)
 
-    deleted_count, _ = User.objects.filter(id__in=user_ids).delete()
-    return Response({'deleted': deleted_count}, status=status.HTTP_200_OK)
+        deleted_count, _ = User.objects.filter(id__in=user_ids).delete()
+        logger.info(f"Bulk deleted {deleted_count} users by {request.user.username}")
+        return Response({'deleted': deleted_count}, status=status.HTTP_200_OK)
 
-
+    except Exception as e:
+        logger.error(f"Bulk delete error: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -219,6 +248,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             # Default: Own tickets only
             return qs.filter(user=user)
         except Exception as e:
+            logger.error(f"Ticket queryset error for user {self.request.user.username}: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'], url_path='staff')
@@ -226,34 +256,38 @@ class TicketViewSet(viewsets.ModelViewSet):
         try:
             """Return tickets assigned to the currently logged-in staff user."""
             user = request.user
-            print(user)
 
             if not user.is_staff:
+                logger.warning(f"Non-staff user {user.username} attempted to access staff tickets")
                 return Response(
                     {'error': 'Only staff can access their assigned tickets.'},
                     status=status.HTTP_403_FORBIDDEN
                 )
 
             tickets = Ticket.objects.filter(assigned_to=user)
-            print(tickets)
             serializer = self.get_serializer(tickets, many=True)
+            logger.info(f"Staff tickets fetched by {user.username}: {tickets.count()} tickets")
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
+            logger.error(f"Staff tickets error for {request.user.username}: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_create(self, serializer):
         try:
             ticket = serializer.save(user=self.request.user)
+            logger.info(f"Ticket created by {self.request.user.username}: {ticket.id}")
             self._broadcast('created',ticket)
         except Exception as e:
+            logger.error(f"Ticket creation error: {str(e)}")
             raise serializers.ValidationError({'error': str(e)})
 
     def perform_update(self, serializer):
         try:
-            print(self.request.data)  # see raw incoming dat
             ticket = serializer.save()
+            logger.info(f"Ticket updated by {self.request.user.username}: {ticket.id}")
             self._broadcast('updated', ticket)  
         except Exception as e:
+            logger.error(f"Ticket creation error: {str(e)}")
             raise serializers.ValidationError({'error': str(e)})
 
     def perform_destroy(self, instance):
@@ -261,13 +295,16 @@ class TicketViewSet(viewsets.ModelViewSet):
         try:
             # Only staff or admin can delete
             if not (user.is_staff or user.is_superuser):
+                logger.warning(f"Unauthorized ticket delete attempt by {user.username}")
                 raise PermissionDenied("You do not have permission to delete this ticket.")        
             ticket_data = TicketSerializer(instance).data
             instance.delete()   
+            logger.info(f"Ticket deleted by {user.username}: {ticket_data['id']}")
             self._broadcast('deleted', ticket_data,serialized=True)
         except PermissionDenied as e:
             raise e
         except Exception as e:
+            logger.error(f"Ticket delete error: {str(e)}")
             raise serializers.ValidationError({'error': str(e)})
 
 
@@ -291,5 +328,6 @@ class TicketViewSet(viewsets.ModelViewSet):
                     'message': message
                 }  
             )
+            logger.info(f"WebSocket broadcast: {action} ticket {payload.get('id')}")
         except Exception as e:
-            print(f"WebSocket broadcast error: {e}")
+            logger.error(f"WebSocket broadcast error: {str(e)}")
