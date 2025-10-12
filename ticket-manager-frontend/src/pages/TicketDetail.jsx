@@ -30,6 +30,7 @@ const TicketDetail = () => {
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const tokens = JSON.parse(localStorage.getItem("authTokens"));
   const token = tokens?.access;
+  const user = JSON.parse(localStorage.getItem("user"));
   // const WEBSOCKET_URL = `ws://localhost:8000/ws/tickets/updated/?token=${token}`;
   const WEBSOCKET_URL = `${import.meta.env.VITE_WEBSOCKET_BASE_URL}/ws/tickets/updated/?token=${token}`;
   // Edit form state
@@ -501,15 +502,17 @@ useEffect(() => {
                     <Edit className="w-4 h-4" />
                     Edit
                   </Button>
+)}{(user?.is_staff || user?.is_superuser) && (
+  <Button 
+    variant="destructive" 
+    onClick={() => setShowDeleteConfirm(true)}
+    className="flex items-center gap-2"
+  >
+    <Trash2 className="w-4 h-4" />
+    Delete
+  </Button>
 )}
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </Button>
+
                 </>
               ) : (
                 <>

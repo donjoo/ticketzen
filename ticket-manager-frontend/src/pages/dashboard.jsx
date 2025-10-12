@@ -268,25 +268,7 @@ useEffect(() => {
 
 
 
-  const handleDeleteTicket = async (ticketId) => {
-    try {
-      const tokens = JSON.parse(localStorage.getItem("authTokens"));
-      let token = null;
-      
-      if (tokens && tokens.access) {
-        token = tokens.access;
-      }
 
-      await api.delete(`tickets/${ticketId}/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-        toast.success("Ticket deleted successfully");
-      setTickets(prev => prev.filter(t => t.id !== ticketId));
-      setFilteredTickets(prev => prev.filter(t => t.id !== ticketId));
-    } catch (error) {
-      console.error("Error deleting ticket:", error);
-    }
-  };
 
   // useEffect(() => {
   //   fetchTickets();
@@ -718,13 +700,7 @@ useEffect(() => {
           Edit
         </DropdownMenuItem>
       )}
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteTicket(ticket.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
+                             
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

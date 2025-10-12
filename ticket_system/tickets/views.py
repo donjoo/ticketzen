@@ -17,7 +17,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.decorators import action
 from django.contrib.auth import get_user_model
 from .serializers import  BulkUserUpdateSerializer
-
+from rest_framework.exceptions import PermissionDenied
 
 # Djangos built user authentication for DRF + react project
 
@@ -249,6 +249,11 @@ class TicketViewSet(viewsets.ModelViewSet):
 
 
     def perform_destroy(self, instance):
+        user = self.request.user
+
+        # Only staff or admin can delete
+        if not (user.is_staff or user.is_superuser):
+            raise PermissionDenied("You do not have permission to delete this ticket.")        
         ticket_data = TicketSerializer(instance).data
         instance.delete()   
         self._broadcast('deleted', ticket_data,serialized=True)
